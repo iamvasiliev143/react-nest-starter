@@ -1,0 +1,24 @@
+pre-commit:
+  parallel: true
+  commands:
+    staged-diff:
+      run: git diff --cached --check
+    lint:
+      run: npm run lint
+    format:
+      run: npm run format:check
+
+commit-msg:
+  commands:
+    conventional-commit:
+      run: npm exec -- commitlint --edit "{1}"
+
+post-commit:
+  commands:
+    update-graph:
+      run: npm run graph:update
+
+pre-push:
+  commands:
+    check:
+      run: npm run check

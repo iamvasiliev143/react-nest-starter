@@ -1,0 +1,30 @@
+:root {
+  background: var(--tg-theme-bg-color, #fff);
+  color: var(--tg-theme-text-color, #181818);
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+}
+
+main {
+  padding: max(1rem, var(--tg-viewport-content-safe-area-inset-top, 0px))
+    max(1rem, var(--tg-viewport-content-safe-area-inset-right, 0px))
+    max(1rem, var(--tg-viewport-content-safe-area-inset-bottom, 0px))
+    max(1rem, var(--tg-viewport-content-safe-area-inset-left, 0px));
+}
+
+a {
+  color: var(--tg-theme-link-color, #174c91);
+}
+
+button,
+select {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}

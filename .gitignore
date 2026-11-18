@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+.claude/settings.local.json
+CLAUDE.local.md
+*.log
+.engram/
+.graphify/
+graphify-out/
+.idea/
+.storage/
+playwright-report/
+test-results/

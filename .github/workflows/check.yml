@@ -1,0 +1,88 @@
+name: Check
+
+on:
+  push:
+    branches: [main, develop, staging, 'release/**']
+    tags: ['v*']
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, edited]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check pull request route
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          BASE_REPO_ID: ${{ github.event.pull_request.base.repo.id }}
+          HEAD_REPO_ID: ${{ github.event.pull_request.head.repo.id }}
+        run: |
+          task_branch='^(feat|fix|chore|docs)/.+$'
+          release_branch='^release/(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
+
+          if [[ "$BASE_REF" == develop && "$HEAD_REF" =~ $task_branch ]]; then
+            exit 0
+          fi
+
+          if [[ -n "$BASE_REPO_ID" && "$BASE_REPO_ID" == "$HEAD_REPO_ID" ]]; then
+            case "$BASE_REF" in
+              develop)
+                if [[ "$HEAD_REF" == main || "$HEAD_REF" =~ $release_branch ]]; then exit 0; fi
+                ;;
+              staging)
+                if [[ "$HEAD_REF" =~ $release_branch ]]; then exit 0; fi
+                ;;
+              main)
+                if [[ "$HEAD_REF" == staging || "$HEAD_REF" == hotfix/?* ]]; then exit 0; fi
+                ;;
+              *)
+                if [[ "$BASE_REF" =~ $release_branch && ( "$HEAD_REF" == main || "$HEAD_REF" == fix/?* ) ]]; then exit 0; fi
+                ;;
+            esac
+          fi
+
+          printf 'Pull request route is not allowed: %s -> %s. See docs/git-workflow.md.\n' "$HEAD_REF" "$BASE_REF" >&2
+          exit 1
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check pull request diff
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: git diff --check "$BASE_SHA...$HEAD_SHA" --
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+        env:
+          LEFTHOOK: '0'
+      - name: Check pull request commit messages
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: npm exec -- commitlint --from "$BASE_SHA" --to "$HEAD_SHA" --verbose
+      - name: Check squash commit title
+        if: >-
+          github.event_name == 'pull_request' &&
+          !github.event.pull_request.draft &&
+          (startsWith(github.event.pull_request.head.ref, 'feat/') ||
+          startsWith(github.event.pull_request.head.ref, 'fix/') ||
+          startsWith(github.event.pull_request.head.ref, 'chore/') ||
+          startsWith(github.event.pull_request.head.ref, 'docs/'))
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: printf '%s\n' "$PR_TITLE" | npm exec -- commitlint --verbose
+      - run: npm run check
+      - run: npm exec -w web -- playwright install --with-deps chromium
+      - run: npm run test:e2e
