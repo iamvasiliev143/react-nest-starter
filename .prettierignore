@@ -9,6 +9,6 @@ graphify-out/
 .storage/
 playwright-report/
 test-results/
-api/drizzle/meta/
+api/src/database/postgres/migrations/meta/
 api/openapi.json
 web/src/api-schema.d.ts
