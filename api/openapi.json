@@ -206,7 +206,16 @@
     "version": "1.0",
     "contact": {}
   },
-  "tags": [],
+  "tags": [
+    {
+      "name": "Status",
+      "description": "API liveness, dependency readiness and localized greeting"
+    },
+    {
+      "name": "TelegramAuth",
+      "description": "Exchange Telegram launch data for an access token and read the current profile"
+    }
+  ],
   "servers": [],
   "components": {
     "securitySchemes": {

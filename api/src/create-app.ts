@@ -1,47 +1,22 @@
 import 'reflect-metadata';
-import { ConsoleLogger, type INestApplication } from '@nestjs/common';
+import { ConsoleLogger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NodeAdapter, type NestNodeApplication } from '@nestjs/platform-node';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import helmet from 'helmet';
+import { configureApp } from './app-setup.js';
 import { AppModule } from './app.module.js';
-import { AppConfig } from './common/config/app-config.js';
 import { ObserveInstrument } from './common/observe.js';
 
-export function createOpenApiDocument(app: INestApplication) {
-  return SwaggerModule.createDocument(
-    app,
-    new DocumentBuilder()
-      .setTitle('Starter API')
-      .setVersion('1.0')
-      .addBearerAuth()
-      .build(),
-  );
-}
-
 export async function createApp({ docs = true } = {}) {
-  const isProduction = process.env.NODE_ENV === 'production';
-
   const app = await NestFactory.create<NestNodeApplication>(
     AppModule,
     new NodeAdapter(),
     {
       instrument: ObserveInstrument,
       logger: new ConsoleLogger({
-        json: isProduction,
+        json: process.env.NODE_ENV === 'production',
       }),
     },
   );
-  app.setGlobalPrefix('api');
-  app.use(helmet());
-
-  const config = app.get(AppConfig);
-  if (docs && config.get('NODE_ENV', { infer: true }) !== 'production') {
-    SwaggerModule.setup('/docs', app, createOpenApiDocument(app), {
-      useGlobalPrefix: true,
-      jsonDocumentUrl: '/openapi.json',
-    });
-  }
-
+  configureApp(app, docs);
   return app;
 }

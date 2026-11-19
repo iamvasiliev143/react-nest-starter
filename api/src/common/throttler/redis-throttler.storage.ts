@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { Logger } from '@nestjs/common';
 import {
   ThrottlerStorageService,
@@ -66,6 +67,7 @@ return { count + 1, windowExpire(), 0, 0 }
  */
 export class RedisThrottlerStorage implements ThrottlerStorage {
   private readonly logger = new Logger(RedisThrottlerStorage.name);
+  private readonly instanceId = randomUUID();
   private sequence = 0;
   private degraded = false;
 
@@ -82,8 +84,8 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
     throttlerName: string,
   ): Promise<ThrottlerStorageRecord> {
     const base = `${PREFIX}${throttlerName}:${key}`;
-    // Уникальный член множества: два попадания в одну миллисекунду не сливаются.
-    const member = `${Date.now()}-${process.pid}-${this.sequence++}`;
+    // Экземпляры в разных контейнерах могут иметь одинаковый PID.
+    const member = `${this.instanceId}:${this.sequence++}`;
     // Во время переподключения не ждём Redis: каждый запрос получил бы
     // задержку на повторную попытку.
     if (this.redis.status === 'reconnecting' || this.redis.status === 'end') {
@@ -111,13 +113,7 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
         isBlocked: blocked === 1,
         timeToBlockExpire: Math.ceil(toBlockExpire / 1000),
       };
-    } catch (error) {
-      if (!this.degraded) {
-        this.degraded = true;
-        this.logger.warn(
-          `Redis is unavailable, counting in process memory: ${(error as Error).message}`,
-        );
-      }
+    } catch {
       return this.countLocally(key, ttl, limit, blockDuration, throttlerName);
     }
   }
@@ -129,6 +125,10 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
     blockDuration: number,
     throttlerName: string,
   ) {
+    if (!this.degraded) {
+      this.degraded = true;
+      this.logger.warn('Redis is unavailable, counting in process memory');
+    }
     return this.fallback.increment(
       key,
       ttl,

@@ -16,7 +16,10 @@ export const AppObserveModule = ObserveModule.forRootAsync({
       serviceId: 'starter-api',
       enabled: Boolean(appKey && appSecret),
       forwardLogs: true,
-      http: { capture: false },
+      http: {
+        capture: false,
+        ignore: ['/api/health', '/api/health/ready'],
+      },
     };
   },
 });

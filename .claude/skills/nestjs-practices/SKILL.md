@@ -24,6 +24,8 @@ paths:
 
 ### Bootstrap и проверка
 
+- Держи создание Nest в `api/src/create-app.ts`, настройку HTTP в `api/src/app-setup.ts`, а запуск сервера в `api/src/main.ts`. Используй ту же фабрику в HTTP-тестах и генерации OpenAPI. Swagger и описания тегов храни рядом в `swagger.ts` и `swagger-tags.ts`.
+
 - Сохраняй `NodeAdapter` и ESM: локальные серверные импорты с расширением `.js`, параметры Nest в третьем аргументе `NestFactory.create` с явным адаптером. Конфигурацию расширяй через существующую Zod-схему и `ConfigService`. Ресурсы закрывай в lifecycle hooks. Проверь, что bootstrap включает shutdown hooks, если ресурс зависит от сигналов остановки.
 - Используй существующие Nest Authentication и Authorization для политик доступа. Изменения публичных маршрутов проверяй через `api-contract`, авторизацию Telegram — через `telegram-auth-change`. Для HTTP используй `node:test` и `fetch` к локальному экземпляру API.
 - Для неизвестной межмодульной зависимости используй `engram-context`, затем проверь исходники.

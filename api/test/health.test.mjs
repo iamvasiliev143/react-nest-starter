@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { createHmac } from 'node:crypto';
+import { createHmac, randomUUID } from 'node:crypto';
 import test from 'node:test';
 import { Storage } from '@nestjs/storage';
 import { sign } from '@tma.js/init-data-node';
@@ -90,6 +90,51 @@ test('NodeAdapter, localization, storage and Telegram bearer auth are wired', as
         assert.equal(alive.status, 200);
         assert.deepEqual(await alive.json(), { status: 'ok' });
         assert.equal(execute.mock.callCount(), 1);
+      },
+    );
+
+    await t.test(
+      'Redis throttler shares counts and blocks across instances',
+      async (t) => {
+        const { RedisThrottlerStorage } =
+          await import('../dist/common/throttler/redis-throttler.storage.js');
+        const { client } = app.get(RedisService);
+        // Other test processes may flush DB 1 while preparing their app.
+        const redis = client.duplicate({ db: 2 });
+        const key = randomUUID();
+        const throttler = 'shared-limit-test';
+        const prefix = `throttler:${throttler}:${key}`;
+        t.after(async () => {
+          try {
+            await redis.del(`${prefix}:hits`, `${prefix}:block`);
+          } finally {
+            redis.disconnect();
+          }
+        });
+        await redis.ping();
+
+        // Both old members used the same wall time, PID and initial sequence.
+        t.mock.method(Date, 'now', () => 1_700_000_000_000);
+        const first = new RedisThrottlerStorage(redis);
+        const second = new RedisThrottlerStorage(redis);
+        const hit = (storage) =>
+          storage.increment(key, 30_000, 2, 60_000, throttler);
+
+        const initial = await hit(first);
+        assert.equal(initial.totalHits, 1);
+        assert.equal(initial.isBlocked, false);
+
+        const shared = await hit(second);
+        assert.equal(shared.totalHits, 2);
+        assert.equal(shared.isBlocked, false);
+
+        const overLimit = await hit(first);
+        assert.equal(overLimit.totalHits, 3);
+        assert.equal(overLimit.isBlocked, true);
+
+        const blocked = await hit(second);
+        assert.equal(blocked.totalHits, 3);
+        assert.equal(blocked.isBlocked, true);
       },
     );
 

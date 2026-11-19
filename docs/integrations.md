@@ -71,9 +71,9 @@ REDIS_URL=redis://127.0.0.1:6380
 
 ## OpenAPI, локализация и наблюдаемость
 
-- Swagger UI доступен по `/api/docs`, JSON — по `/api/openapi.json` в среде разработки. После изменения API выполни `npm run api:types`, чтобы обновить JSON и типы клиента.
+- Swagger UI доступен по `/api/docs`, JSON — по `/api/openapi.json` в среде разработки. HTTP-настройки собраны в `api/src/app-setup.ts`. Swagger и описания разделов находятся в `api/src/swagger.ts` и `api/src/swagger-tags.ts`. Генерация и тесты используют ту же фабрику `createApp()`. После изменения API выполни `npm run api:types`, чтобы обновить JSON и типы клиента.
 - `GET /api/greeting` демонстрирует локализацию `en` и `ru` по заголовку `Accept-Language`. Переводы лежат в `api/src/i18n/<locale>/<namespace>.json`: файл `greeting.json` даёт ключи `greeting.*`. Добавляй файл фичи во все локали; сборка копирует каталоги в `dist/i18n`.
-- Для отправки трасс и Nest-логов в Observe задай обе переменные `OBSERVE_APP_KEY` и `OBSERVE_APP_SECRET`. Без ключей работают локальные логи Nest. [NestJS Observe](https://docs.nestjs.com/observability/sdk)
+- Для отправки трасс и Nest-логов в Observe задай обе переменные `OBSERVE_APP_KEY` и `OBSERVE_APP_SECRET`. Без ключей работают локальные логи Nest. Запросы к liveness и readiness исключены из трассировки. Для явной привязки событий к сборке задай `OBSERVE_SERVICE_VERSION` в окружении деплоя. [NestJS Observe](https://docs.nestjs.com/observability/sdk)
 
 ## Проверки
 
