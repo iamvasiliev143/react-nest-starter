@@ -4,9 +4,9 @@ import { NestFactory } from '@nestjs/core';
 import { NodeAdapter, type NestNodeApplication } from '@nestjs/platform-node';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
-import { AppModule } from './app.module';
-import { AppConfig } from './common/config/app-config';
-import { ObserveInstrument } from './common/observe';
+import { AppModule } from './app.module.js';
+import { AppConfig } from './common/config/app-config.js';
+import { ObserveInstrument } from './common/observe.js';
 
 export function createOpenApiDocument(app: INestApplication) {
   return SwaggerModule.createDocument(

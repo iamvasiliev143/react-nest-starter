@@ -4,9 +4,9 @@ import {
   JwtBearerProvider,
   type JwtClaims,
 } from '@nestjs/authentication';
-import { AppConfig } from '../../common/config/app-config';
-import type { UserIdentity } from '../users/interfaces/user.interface';
-import { UsersService } from '../users/users.service';
+import { AppConfig } from '../../common/config/app-config.js';
+import type { UserIdentity } from '../users/interfaces/user.interface.js';
+import { UsersService } from '../users/users.service.js';
 
 @Injectable()
 export class TelegramBearer extends JwtBearerProvider<UserIdentity> {

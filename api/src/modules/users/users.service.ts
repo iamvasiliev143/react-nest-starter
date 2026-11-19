@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { UsersRepository } from '../../database/postgres/repositories/users.repository';
-import type { UserIdentity, UserProfile } from './interfaces/user.interface';
+import { UsersRepository } from '../../database/postgres/repositories/users.repository.js';
+import type { UserIdentity, UserProfile } from './interfaces/user.interface.js';
 
 /** Пользователи. Без DATABASE_URL работает без БД. */
 @Injectable()

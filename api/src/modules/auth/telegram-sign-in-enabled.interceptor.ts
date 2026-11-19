@@ -4,7 +4,7 @@ import {
   type CallHandler,
   type NestInterceptor,
 } from '@nestjs/common';
-import { AppConfig } from '../../common/config/app-config';
+import { AppConfig } from '../../common/config/app-config.js';
 
 /**
  * Отвечает 503, пока вход через Telegram не настроен.

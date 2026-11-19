@@ -1,5 +1,5 @@
 import { ConfigService } from '@nestjs/config';
-import type { Environment } from './environment';
+import type { Environment } from './environment.js';
 
 /**
  * Типизированный доступ к проверенной конфигурации.

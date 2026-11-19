@@ -1,6 +1,6 @@
 import { mkdir, realpath } from 'node:fs/promises';
 import { LocalDisk, StorageModule } from '@nestjs/storage';
-import { AppConfig } from './config/app-config';
+import { AppConfig } from './config/app-config.js';
 
 export const AppStorageModule = StorageModule.forRootAsync({
   inject: [AppConfig],

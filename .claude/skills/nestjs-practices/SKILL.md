@@ -23,7 +23,7 @@ paths:
 
 ### Bootstrap и проверка
 
-- API собирается в CommonJS (`module: nodenext` без `"type": "module"`): локальные импорты пишутся без расширения, ESM-only пакеты Nest подключаются через `require(esm)` из Node 22. Зависимость с top-level await так не загрузится, проверяй это при добавлении пакета. Сохраняй `NodeAdapter` и параметры Nest в третьем аргументе `NestFactory.create` с явным адаптером. Конфигурацию расширяй через существующую Zod-схему и `ConfigService`. Ресурсы закрывай в lifecycle hooks. Проверь, что bootstrap включает shutdown hooks, если ресурс зависит от сигналов остановки.
+- Сохраняй `NodeAdapter` и ESM: локальные серверные импорты с расширением `.js`, параметры Nest в третьем аргументе `NestFactory.create` с явным адаптером. Конфигурацию расширяй через существующую Zod-схему и `ConfigService`. Ресурсы закрывай в lifecycle hooks. Проверь, что bootstrap включает shutdown hooks, если ресурс зависит от сигналов остановки.
 - Используй существующие Nest Authentication и Authorization для политик доступа. Изменения публичных маршрутов проверяй через `api-contract`, авторизацию Telegram — через `telegram-auth-change`. Для HTTP используй `node:test` и `fetch` к локальному экземпляру API.
 - Для неизвестной межмодульной зависимости используй `engram-context`, затем проверь исходники.
 

@@ -12,18 +12,18 @@ import { CurrentUser, Public, TokenService } from '@nestjs/authentication';
 import { Can } from '@nestjs/authorization';
 import { ApiBearerAuth, ApiBody, ApiOkResponse } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { AppConfig } from '../../common/config/app-config';
-import { ZodValidationPipe } from '../../common/zod-validation.pipe';
-import type { UserIdentity } from '../users/interfaces/user.interface';
-import { UsersService } from '../users/users.service';
+import { AppConfig } from '../../common/config/app-config.js';
+import { ZodValidationPipe } from '../../common/zod-validation.pipe.js';
+import type { UserIdentity } from '../users/interfaces/user.interface.js';
+import { UsersService } from '../users/users.service.js';
 import {
   telegramExchangeSchema,
   type TelegramExchangeRequest,
-} from './dto/telegram-exchange.request.dto';
-import { TelegramToken } from './dto/telegram-token.response.dto';
-import { TelegramUser } from './dto/telegram-user.response.dto';
-import { TelegramSignInEnabledInterceptor } from './telegram-sign-in-enabled.interceptor';
-import { verifyTelegramInitData } from './telegram-init-data';
+} from './dto/telegram-exchange.request.dto.js';
+import { TelegramToken } from './dto/telegram-token.response.dto.js';
+import { TelegramUser } from './dto/telegram-user.response.dto.js';
+import { TelegramSignInEnabledInterceptor } from './telegram-sign-in-enabled.interceptor.js';
+import { verifyTelegramInitData } from './telegram-init-data.js';
 
 const invalidCredentials = () =>
   new UnauthorizedException('Invalid Telegram credentials');

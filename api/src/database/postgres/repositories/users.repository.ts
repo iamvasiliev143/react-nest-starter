@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
-import { PostgresService } from '../postgres.service';
-import { users } from '../schema';
+import { PostgresService } from '../postgres.service.js';
+import { users } from '../schema/users.schema.js';
 
 export type UserRow = typeof users.$inferSelect;
 export type UpsertUserInput = Pick<

@@ -1,5 +1,5 @@
 import { AuthenticationModule } from '@nestjs/authentication';
-import { AppConfig } from '../../common/config/app-config';
+import { AppConfig } from '../../common/config/app-config.js';
 
 /** Корневая регистрация Nest Authentication с access-токеном Mini App. */
 export const AccessTokenModule = AuthenticationModule.forRootAsync({

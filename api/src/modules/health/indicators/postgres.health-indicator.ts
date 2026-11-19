@@ -4,7 +4,7 @@ import {
   type HealthIndicatorResult,
 } from '@nestjs/terminus';
 import { sql } from 'drizzle-orm';
-import { PostgresService } from '../../../database/postgres/postgres.service';
+import { PostgresService } from '../../../database/postgres/postgres.service.js';
 
 @Injectable()
 export class PostgresHealthIndicator {
