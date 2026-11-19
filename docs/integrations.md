@@ -47,10 +47,6 @@ DATABASE_URL=postgresql://starter:starter-local@127.0.0.1:5434/starter
 
 Код базы лежит в `api/src/database/postgres/`: таблицы Drizzle в `schema/`, запросы в `repositories/`, миграции в `migrations/`. Для новой миграции измени схему и выполни `npm run db:generate -w api`.
 
-## Файловое хранилище
-
-`@nestjs/storage` использует локальный диск `api/.storage` по умолчанию. Путь настраивается через `STORAGE_PATH`. Приложение обращается к файлам через `Storage` из Nest DI.
-
 ## Redis
 
 Запусти Redis командой `docker compose up -d --wait redis` и задай в `api/.env`:
@@ -61,6 +57,10 @@ REDIS_URL=redis://127.0.0.1:6380
 
 API подключает Redis только при наличии `REDIS_URL`. Локальный контейнер доступен с loopback на порту `6380` и хранит данные в памяти. В production используй управляемое подключение с TLS (`rediss://`) и храни URL с учётными данными в секретах окружения. Фичи получают клиент из Nest DI через `RedisModule`.
 
+## Файловое хранилище
+
+`@nestjs/storage` использует локальный диск `api/.storage` по умолчанию. Путь настраивается через `STORAGE_PATH`. Приложение обращается к файлам через `Storage` из Nest DI.
+
 ## Проверки состояния API
 
 - `/api/health` проверяет, что процесс отвечает, и возвращает `200` с `{"status":"ok"}`.
@@ -70,7 +70,7 @@ API подключает Redis только при наличии `REDIS_URL`. �
 ## OpenAPI, локализация и наблюдаемость
 
 - Swagger UI доступен по `/api/docs`, JSON — по `/api/openapi.json` в среде разработки. После изменения API выполни `npm run api:types`, чтобы обновить JSON и типы клиента.
-- `GET /api/greeting` демонстрирует локализацию `en` и `ru` по заголовку `Accept-Language`.
+- `GET /api/greeting` демонстрирует локализацию `en` и `ru` по заголовку `Accept-Language`. Переводы лежат в `api/src/i18n/<locale>/<namespace>.json`: файл `greeting.json` даёт ключи `greeting.*`. Добавляй файл фичи во все локали; сборка копирует каталоги в `dist/i18n`.
 - Для отправки трасс и Nest-логов в Observe задай обе переменные `OBSERVE_APP_KEY` и `OBSERVE_APP_SECRET`. Без ключей работают локальные логи Nest. [NestJS Observe](https://docs.nestjs.com/observability/sdk)
 
 ## Проверки

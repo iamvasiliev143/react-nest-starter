@@ -1,17 +1,19 @@
+import { fileURLToPath } from 'node:url';
 import {
   AcceptLanguageLocaleResolver,
   I18nModule,
-  InMemoryI18nLoader,
+  JsonI18nLoader,
 } from '@nestjs/i18n';
 
-export const translations = {
-  en: { app: { greeting: 'Hello' } },
-  ru: { app: { greeting: 'Привет' } },
-};
+/**
+ * Переводы лежат в `src/i18n/<locale>/<namespace>.json`: файл `greeting.json`
+ * даёт ключи `greeting.*`. Nest копирует их в `dist/i18n` (assets в nest-cli.json).
+ */
+const catalogPath = fileURLToPath(new URL('../i18n', import.meta.url));
 
 export const AppI18nModule = I18nModule.forRoot({
   defaultLocale: 'en',
   supportedLocales: ['en', 'ru'],
-  loader: new InMemoryI18nLoader(translations),
+  loader: new JsonI18nLoader({ path: catalogPath }),
   resolvers: [new AcceptLanguageLocaleResolver()],
 });

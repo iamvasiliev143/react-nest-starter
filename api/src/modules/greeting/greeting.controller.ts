@@ -18,6 +18,6 @@ export class GreetingController {
   })
   @ApiOkResponse({ type: Greeting })
   greeting(): Greeting {
-    return { message: this.i18n.t('app.greeting') };
+    return { message: this.i18n.t('greeting.message') };
   }
 }
