@@ -35,7 +35,7 @@ codex -c 'mcp_servers.notion.url="https://mcp.notion.com/mcp"' mcp login notion
 
 Сервер `postgres` не подключай к staging или production: у проекта `crystaldba/postgres-mcp` нет релизов с мая 2025 года.
 
-## PostgreSQL и файлы
+## PostgreSQL
 
 Для локальной БД запусти `docker compose up -d --wait postgres` и укажи в `api/.env`:
 
@@ -43,7 +43,11 @@ codex -c 'mcp_servers.notion.url="https://mcp.notion.com/mcp"' mcp login notion
 DATABASE_URL=postgresql://starter:starter-local@127.0.0.1:5434/starter
 ```
 
-Затем выполни `npm run db:migrate`. Когда база подключена, вход создаёт запись Telegram-пользователя в PostgreSQL. Для новой миграции используй `npm run db:generate -w api`. Без `DATABASE_URL` вход работает в режиме без сохранения пользователя. Для продукта с пользовательскими данными настрой PostgreSQL до запуска.
+Затем выполни `npm run db:migrate`. Когда база подключена, вход создаёт или обновляет запись Telegram-пользователя. Без `DATABASE_URL` вход работает без сохранения пользователя. Для продукта с пользовательскими данными настрой PostgreSQL до запуска.
+
+Код базы лежит в `api/src/database/postgres/`: таблицы Drizzle в `schema/`, запросы в `repositories/`, миграции в `migrations/`. Для новой миграции измени схему и выполни `npm run db:generate -w api`.
+
+## Файловое хранилище
 
 `@nestjs/storage` использует локальный диск `api/.storage` по умолчанию. Путь настраивается через `STORAGE_PATH`. Приложение обращается к файлам через `Storage` из Nest DI.
 
