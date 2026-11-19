@@ -90,7 +90,7 @@ jobs:
 
           printf 'Pull request route is not allowed: %s -> %s. See docs/git-workflow.md.\n' "$HEAD_REF" "$BASE_REF" >&2
           exit 1
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -100,7 +100,7 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: git diff --check "$BASE_SHA...$HEAD_SHA" --
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: npm
