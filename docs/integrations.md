@@ -84,7 +84,7 @@ Socket.IO доступен через транспортный путь `/api/so
 - API использует URI-версионирование. Новые HTTP-ручки по умолчанию идут под `/api/v1/`. Прежние маршруты авторизации и приветствия доступны как совместимые aliases. Health и Swagger сохраняют адреса без версии. Клиент использует `/api/v1/auth/*`.
 - Swagger UI доступен по `/api/docs`, JSON — по `/api/openapi.json` в среде разработки. HTTP-настройки собраны в `api/src/app-setup.ts`. Swagger и описания разделов находятся в `api/src/swagger.ts` и `api/src/swagger-tags.ts`. Генерация и тесты используют ту же фабрику `createApp()`. После изменения API выполни `npm run api:types`, чтобы обновить JSON и типы клиента.
 - `GET /api/greeting` демонстрирует локализацию `en` и `ru` по заголовку `Accept-Language`. Переводы лежат в `api/src/i18n/<locale>/<namespace>.json`: файл `greeting.json` даёт ключи `greeting.*`. Добавляй файл фичи во все локали; сборка копирует каталоги в `dist/i18n`.
-- Переводы интерфейса лежат в каталогах React и загружаются через `react-i18next`. В Telegram язык выбирается по языку пользователя из SDK, а русский используется как fallback.
+- Переводы интерфейса лежат в `web/src/i18n/<locale>/<namespace>.json` и загружаются через `react-i18next`. Добавляй одинаковые ключи и параметры интерполяции во все поддерживаемые языки. В Telegram язык выбирается по языку пользователя из SDK, а русский используется как fallback.
 - Для отправки трасс и Nest-логов в Observe задай обе переменные `OBSERVE_APP_KEY` и `OBSERVE_APP_SECRET`. Без ключей работают локальные логи Nest. Запросы к liveness и readiness исключены из трассировки. Для явной привязки событий к сборке задай `OBSERVE_SERVICE_VERSION` в окружении деплоя. [NestJS Observe](https://docs.nestjs.com/observability/sdk)
 
 ## Проверки

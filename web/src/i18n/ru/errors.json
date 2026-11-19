@@ -1,0 +1,9 @@
+{
+  "signInRequired": "Войди через Telegram, чтобы продолжить",
+  "apiUnavailable": "API недоступен",
+  "invalidTelegramData": "Не удалось подтвердить данные. Открой Mini App заново из Telegram.",
+  "signInFailed": "Вход через Telegram не удался. Попробуй ещё раз.",
+  "profileLoadFailed": "Не удалось загрузить профиль",
+  "invalidSession": "Сервер вернул некорректную сессию",
+  "notFound": "Страница не найдена."
+}

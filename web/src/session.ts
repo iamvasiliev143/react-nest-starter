@@ -40,7 +40,7 @@ export function startSession(accessToken: string, expiresIn: number) {
     ttl <= 0 ||
     ttl > 2_147_483_647
   ) {
-    throw new ClientError('errors.invalidSession');
+    throw new ClientError('errors:invalidSession');
   }
   publish({
     status: 'active',

@@ -9,7 +9,7 @@ const protectedApi = createClient<paths>({ credentials: 'omit' });
 protectedApi.use({
   onRequest({ request }) {
     const token = getAccessToken();
-    if (!token) throw new ClientError('errors.signInRequired');
+    if (!token) throw new ClientError('errors:signInRequired');
     request.headers.set('Authorization', 'Bearer ' + token);
     return request;
   },
@@ -23,7 +23,7 @@ protectedApi.use({
 
 export async function checkHealth() {
   const { data } = await publicApi.GET('/api/health');
-  if (data?.status !== 'ok') throw new ClientError('errors.apiUnavailable');
+  if (data?.status !== 'ok') throw new ClientError('errors:apiUnavailable');
   return data;
 }
 
@@ -32,13 +32,13 @@ export async function signInWithTelegram(initData: string) {
     body: { initData },
   });
   if (response.status === 401)
-    throw new ClientError('errors.invalidTelegramData');
-  if (!data) throw new ClientError('errors.signInFailed');
+    throw new ClientError('errors:invalidTelegramData');
+  if (!data) throw new ClientError('errors:signInFailed');
   startSession(data.accessToken, data.expiresIn);
 }
 
 export async function getTelegramProfile(signal?: AbortSignal) {
   const { data } = await protectedApi.GET('/api/v1/auth/me', { signal });
-  if (!data) throw new ClientError('errors.profileLoadFailed');
+  if (!data) throw new ClientError('errors:profileLoadFailed');
   return data;
 }

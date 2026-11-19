@@ -1,0 +1,9 @@
+{
+  "signInRequired": "Sign in with Telegram to continue",
+  "apiUnavailable": "API unavailable",
+  "invalidTelegramData": "Could not verify your Telegram data. Reopen the Mini App from Telegram.",
+  "signInFailed": "Telegram sign-in failed. Try again.",
+  "profileLoadFailed": "Could not load your profile",
+  "invalidSession": "The server returned an invalid session",
+  "notFound": "Page not found."
+}

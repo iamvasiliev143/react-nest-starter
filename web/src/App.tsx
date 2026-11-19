@@ -21,7 +21,7 @@ function StatusPage({
 }: {
   auth: UseMutationResult<void, Error, string>;
 }) {
-  const { t } = useTranslation();
+  const { t } = useTranslation(['health', 'auth', 'errors']);
   const health = useQuery({
     queryKey: ['api-health'],
     queryFn: checkHealth,
@@ -40,16 +40,16 @@ function StatusPage({
   const initData = getTelegramInitData();
 
   return (
-    <section aria-label={t('health.section')}>
+    <section aria-label={t('health:section')}>
       <p role="status">
         {health.isFetching
-          ? t('health.checking')
+          ? t('health:checking')
           : health.isSuccess
-            ? t('health.available')
-            : t('errors.apiUnavailable')}
+            ? t('health:available')
+            : t('errors:apiUnavailable')}
       </p>
       <button type="button" onClick={() => void health.refetch()}>
-        {t('health.check')}
+        {t('health:check')}
       </button>
       {initData && (
         <div>
@@ -57,14 +57,14 @@ function StatusPage({
             <>
               <p role="status">
                 {profile.data
-                  ? t('auth.signedIn', { id: profile.data.id })
+                  ? t('auth:signedIn', { id: profile.data.id })
                   : profile.isFetching
-                    ? t('auth.loadingProfile')
-                    : t('auth.profileUnavailable')}
+                    ? t('auth:loadingProfile')
+                    : t('auth:profileUnavailable')}
               </p>
               {profile.isError && (
                 <button type="button" onClick={() => void profile.refetch()}>
-                  {t('auth.retryProfile')}
+                  {t('auth:retryProfile')}
                 </button>
               )}
               <button
@@ -74,13 +74,13 @@ function StatusPage({
                   endSession();
                 }}
               >
-                {t('auth.signOut')}
+                {t('auth:signOut')}
               </button>
             </>
           ) : (
             <>
               {session.status === 'expired' && (
-                <p role="status">{t('auth.expired')}</p>
+                <p role="status">{t('auth:expired')}</p>
               )}
               <button
                 type="button"
@@ -88,15 +88,15 @@ function StatusPage({
                 onClick={() => auth.mutate(initData)}
               >
                 {session.status === 'expired'
-                  ? t('auth.signInAgain')
-                  : t('auth.signIn')}
+                  ? t('auth:signInAgain')
+                  : t('auth:signIn')}
               </button>
               {auth.error && (
                 <p role="alert">
                   {t(
                     auth.error instanceof ClientError
                       ? auth.error.key
-                      : 'errors.signInFailed',
+                      : 'errors:signInFailed',
                   )}
                 </p>
               )}
@@ -122,7 +122,7 @@ const timezoneForm = z.object({ timezone: z.enum(['UTC', 'Europe/Kyiv']) });
 type TimezoneForm = z.infer<typeof timezoneForm>;
 
 function TimePage() {
-  const { t } = useTranslation();
+  const { t } = useTranslation(['time', 'navigation']);
   const { register, handleSubmit } = useForm<TimezoneForm>({
     resolver: zodResolver(timezoneForm),
     defaultValues: { timezone: 'UTC' },
@@ -132,16 +132,16 @@ function TimePage() {
 
   return (
     <section>
-      <h2>{t('navigation.time')}</h2>
+      <h2>{t('navigation:time')}</h2>
       <form onSubmit={handleSubmit(setSelection)}>
         <label>
-          {t('time.timezone')}
+          {t('time:timezone')}
           <select {...register('timezone')}>
             <option value="UTC">UTC</option>
             <option value="Europe/Kyiv">Europe/Kyiv</option>
           </select>
         </label>
-        <button type="submit">{t('time.show')}</button>
+        <button type="submit">{t('time:show')}</button>
       </form>
       <p role="status">
         {format(now, 'yyyy-MM-dd HH:mm:ss XXX')} ({selection.timezone})
@@ -151,21 +151,21 @@ function TimePage() {
 }
 
 export function App() {
-  const { t } = useTranslation();
+  const { t } = useTranslation(['navigation', 'errors']);
   const auth = useMutation({ mutationFn: signInWithTelegram });
   return (
     <main>
       <TelegramBackButton />
       <h1>React + NestJS</h1>
-      <nav aria-label={t('navigation.sections')}>
-        <Link to="/">{t('navigation.api')}</Link>
+      <nav aria-label={t('navigation:sections')}>
+        <Link to="/">{t('navigation:api')}</Link>
         {' · '}
-        <Link to="/time">{t('navigation.time')}</Link>
+        <Link to="/time">{t('navigation:time')}</Link>
       </nav>
       <Routes>
         <Route index element={<StatusPage auth={auth} />} />
         <Route path="/time" element={<TimePage />} />
-        <Route path="*" element={<p>{t('errors.notFound')}</p>} />
+        <Route path="*" element={<p>{t('errors:notFound')}</p>} />
       </Routes>
     </main>
   );
