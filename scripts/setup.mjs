@@ -1,0 +1,210 @@
+import process from 'node:process';
+import console from 'node:console';
+import { randomBytes } from 'node:crypto';
+import { readFile, writeFile } from 'node:fs/promises';
+import { createConnection } from 'node:net';
+import { dirname, resolve } from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { URL, fileURLToPath, pathToFileURL } from 'node:url';
+import { parseArgs, parseEnv } from 'node:util';
+
+async function readJson(path) {
+  return JSON.parse(await readFile(path, 'utf8'));
+}
+
+/** Prepares a clone without installing packages or changing existing credentials. */
+export async function setupProject(root, { name, botToken } = {}) {
+  if (name && !/^[a-z][a-z0-9-]{0,69}$/.test(name)) {
+    throw new Error(
+      'Имя должно начинаться с a-z и содержать до 70 символов a-z, 0-9 или дефис.',
+    );
+  }
+  if (botToken && /[\r\n]/.test(botToken)) {
+    throw new Error('Токен Telegram содержит перенос строки.');
+  }
+  const paths = ['package.json', 'api/package.json', 'web/package.json'];
+  const manifests = await Promise.all(
+    paths.map((path) => readJson(resolve(root, path))),
+  );
+  const lock = await readJson(resolve(root, 'package-lock.json'));
+  if (
+    lock.lockfileVersion !== 3 ||
+    !lock.packages?.[''] ||
+    !lock.packages.api ||
+    !lock.packages.web
+  ) {
+    throw new Error('Ожидается npm lockfile v3 с workspaces api и web.');
+  }
+
+  if (name) {
+    const names = [name, name + '-api', name + '-web'];
+    const workspaces = ['', 'api', 'web'];
+    for (const [index, workspace] of workspaces.entries()) {
+      const manifest = manifests[index];
+      if (workspace) {
+        const oldLink = 'node_modules/' + manifest.name;
+        const newLink = 'node_modules/' + names[index];
+        if (lock.packages[newLink] && newLink !== oldLink) {
+          throw new Error('Имя workspace уже занято в lockfile.');
+        }
+        delete lock.packages[oldLink];
+        lock.packages[newLink] = { resolved: workspace, link: true };
+      }
+      manifest.name = names[index];
+      lock.packages[workspace].name = names[index];
+    }
+    lock.name = name;
+    const updates = [...manifests, lock];
+    const files = [...paths, 'package-lock.json'];
+    const originals = await Promise.all(
+      files.map((file) => readFile(resolve(root, file), 'utf8')),
+    );
+    try {
+      for (const [index, file] of files.entries()) {
+        await writeFile(
+          resolve(root, file),
+          JSON.stringify(updates[index], null, 2) + '\n',
+        );
+      }
+    } catch (error) {
+      await Promise.all(
+        files.map((file, index) =>
+          writeFile(resolve(root, file), originals[index]),
+        ),
+      );
+      throw error;
+    }
+  }
+
+  const envPath = resolve(root, 'api/.env');
+  let createdEnv = false;
+  let template = await readFile(resolve(root, 'api/.env.example'), 'utf8');
+  if (botToken) {
+    template = template.replace(
+      /^TELEGRAM_BOT_TOKEN=.*$/m,
+      () => 'TELEGRAM_BOT_TOKEN=' + JSON.stringify(botToken),
+    );
+    template = template.replace(
+      /^AUTH_TOKEN_SECRET=.*$/m,
+      () => 'AUTH_TOKEN_SECRET=' + randomBytes(48).toString('hex'),
+    );
+  }
+  try {
+    await writeFile(envPath, template, { flag: 'wx', mode: 0o600 });
+    createdEnv = true;
+  } catch (error) {
+    if (error.code !== 'EEXIST') throw error;
+  }
+  return { createdEnv, environment: parseEnv(await readFile(envPath, 'utf8')) };
+}
+
+function checkPort(rawUrl, defaultPort) {
+  return new Promise((resolveCheck) => {
+    let url;
+    try {
+      url = new URL(rawUrl);
+    } catch {
+      resolveCheck(false);
+      return;
+    }
+    const socket = createConnection({
+      host: url.hostname,
+      port: Number(url.port || defaultPort),
+    });
+    const finish = (available) => {
+      socket.destroy();
+      resolveCheck(available);
+    };
+    socket.setTimeout(1500);
+    socket.once('connect', () => finish(true));
+    socket.once('timeout', () => finish(false));
+    socket.once('error', () => finish(false));
+  });
+}
+
+function commandAvailable(command) {
+  try {
+    const executable =
+      process.platform === 'win32' && command === 'npm' ? 'npm.cmd' : command;
+    // npm.cmd needs cmd.exe on Windows. Only fixed command names reach this function.
+    const output = execFileSync(
+      process.platform === 'win32' && command === 'npm'
+        ? 'cmd.exe'
+        : executable,
+      process.platform === 'win32' && command === 'npm'
+        ? ['/d', '/s', '/c', 'npm --version']
+        : ['--version'],
+      { encoding: 'utf8', timeout: 5000, stdio: ['ignore', 'pipe', 'ignore'] },
+    );
+    console.log(output.trim());
+    return true;
+  } catch {
+    console.warn(command + ' недоступен.');
+    return false;
+  }
+}
+
+async function main() {
+  const [major, minor] = process.versions.node.split('.').map(Number);
+  if (major < 22 || (major === 22 && minor < 13))
+    throw new Error('Нужен Node.js 22.13 или новее.');
+  const { values } = parseArgs({ options: { name: { type: 'string' } } });
+  const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+  const { createdEnv, environment } = await setupProject(root, {
+    name: values.name,
+    botToken: process.env.TELEGRAM_BOT_TOKEN,
+  });
+  console.log(
+    values.name
+      ? 'Имена пакетов и lockfile обновлены.'
+      : 'Используются текущие имена пакетов.',
+  );
+  console.log(
+    createdEnv ? 'api/.env создан.' : 'Используется существующий api/.env.',
+  );
+  console.log('Node.js ' + process.versions.node);
+  commandAvailable('npm');
+  commandAvailable('docker');
+  const checks = [
+    ['PostgreSQL', environment.DATABASE_URL, 5432],
+    ['Redis', environment.REDIS_URL, 6379],
+    [
+      'S3',
+      environment.S3_ENDPOINT || 'https://s3.amazonaws.com',
+      environment.S3_ENDPOINT?.startsWith('http:') ? 80 : 443,
+    ],
+  ];
+  await Promise.all(
+    checks.map(async ([label, url, port]) => {
+      console.log(
+        label +
+          ((await checkPort(url, port))
+            ? ' — TCP-порт доступен.'
+            : ' — TCP-порт недоступен.'),
+      );
+    }),
+  );
+  if (!environment.TELEGRAM_BOT_TOKEN || !environment.AUTH_TOKEN_SECRET) {
+    console.log(
+      'Для Telegram настройте в api/.env пару TELEGRAM_BOT_TOKEN и AUTH_TOKEN_SECRET (минимум 32 символа).',
+    );
+  }
+  console.log(
+    'Далее выполните npm ci, npm run hooks:install и команды запуска из README.',
+  );
+  console.log(
+    'TCP-проверки подтверждают доступность порта. Readiness API проверяет работу хранилищ.',
+  );
+}
+
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(resolve(process.argv[1])).href
+) {
+  main().catch((error) => {
+    console.error(
+      error instanceof Error ? error.message : 'Ошибка настройки проекта.',
+    );
+    process.exitCode = 1;
+  });
+}

@@ -6,7 +6,7 @@
     "dev": "nest start --watch",
     "start": "node dist/main.js",
     "typecheck": "tsc --noEmit",
-    "test": "npm run build && node --test test/environment.test.mjs test/health.test.mjs test/auth-disabled.test.mjs test/queues.test.mjs test/realtime.test.mjs",
+    "test": "npm run build && node --test test/errors.test.mjs test/environment.test.mjs test/health.test.mjs test/auth-disabled.test.mjs test/queues.test.mjs test/realtime.test.mjs",
     "build": "nest build",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",

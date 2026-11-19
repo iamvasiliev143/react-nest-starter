@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ClientErrorsModule } from './modules/client-errors/client-errors.module.js';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthorizationModule } from '@nestjs/authorization';
 import { ThrottlerGuard } from '@nestjs/throttler';
@@ -25,6 +26,7 @@ import { RealtimeModule } from './modules/realtime/realtime.module.js';
     AppThrottlerModule,
     AppQueuesModule,
     HealthModule,
+    ClientErrorsModule,
     GreetingModule,
     TelegramAuthModule,
     RealtimeModule,

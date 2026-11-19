@@ -40,21 +40,53 @@ test('NodeAdapter, localization, storage and Telegram bearer auth are wired', as
     await app.listen(0, '127.0.0.1');
     const base = await app.getUrl();
 
+    await t.test(
+      'client reports are public, validated, correlated and rate limited',
+      async () => {
+        const send = (body) =>
+          fetch(base + '/api/v1/client-errors', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Request-Id': 'untrusted',
+            },
+            body: JSON.stringify(body),
+          });
+        const invalid = await send({
+          source: 'render',
+          kind: 'Error',
+          page: 'home',
+          message: 'private',
+        });
+        assert.equal(invalid.status, 400);
+        const error = await invalid.json();
+        assert.equal(error.code, 'INVALID_REQUEST');
+        assert.equal(error.requestId, invalid.headers.get('x-request-id'));
+        assert.notEqual(error.requestId, 'untrusted');
+        assert.ok(Array.isArray(error.fieldErrors));
+        const body = { source: 'render', kind: 'Error', page: 'home' };
+        const ok = await send(body);
+        assert.equal(ok.status, 204);
+        assert.equal(await ok.text(), '');
+        for (let i = 0; i < 8; i++)
+          assert.equal((await send(body)).status, 204);
+        const limited = await send(body);
+        assert.equal(limited.status, 429);
+        assert.equal((await limited.json()).code, 'RATE_LIMITED');
+      },
+    );
+
     await t.test('health and localized greeting', async () => {
       const response = await fetch(base + '/api/health');
       assert.equal(response.status, 200);
       assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
       assert.deepEqual(await response.json(), { status: 'ok' });
-      const greeting = await fetch(base + '/api/greeting', {
+      const greeting = await fetch(base + '/api/v1/greeting', {
         headers: { 'Accept-Language': 'ru' },
       });
       assert.equal(greeting.headers.get('content-language'), 'ru');
       assert.deepEqual(await greeting.json(), { message: 'Привет' });
-      const v1 = await fetch(base + '/api/v1/greeting', {
-        headers: { 'Accept-Language': 'ru' },
-      });
-      assert.equal(v1.status, 200);
-      assert.deepEqual(await v1.json(), { message: 'Привет' });
+      assert.equal((await fetch(base + '/api/greeting')).status, 404);
       assert.equal((await fetch(base + '/api/v1/health')).status, 404);
     });
 
@@ -86,7 +118,13 @@ test('NodeAdapter, localization, storage and Telegram bearer auth are wired', as
 
         const unavailable = await fetch(base + '/api/health/ready');
         assert.equal(unavailable.status, 503);
-        assert.deepEqual(await unavailable.json(), {
+        const { code, message, requestId, statusCode, ...health } =
+          await unavailable.json();
+        assert.equal(statusCode, 503);
+        assert.equal(code, 'SERVICE_UNAVAILABLE');
+        assert.equal(message, 'Service unavailable');
+        assert.equal(requestId, unavailable.headers.get('x-request-id'));
+        assert.deepEqual(health, {
           status: 'error',
           info: { redis: { status: 'up' }, s3: { status: 'up' } },
           error: { postgres: { status: 'down' } },
@@ -179,11 +217,11 @@ test('NodeAdapter, localization, storage and Telegram bearer auth are wired', as
       const spec = await fetch(base + '/api/openapi.json');
       assert.equal(spec.status, 200);
       const { paths } = await spec.json();
-      assert.ok(paths['/api/auth/telegram']);
+      assert.equal(paths['/api/auth/telegram'], undefined);
       assert.ok(paths['/api/v1/auth/telegram']);
       assert.equal(
-        paths['/api/greeting'].get.operationId,
-        'StatusController_greeting',
+        paths['/api/v1/greeting'].get.operationId,
+        'GreetingController_greeting_v1',
       );
       const operationIds = Object.values(paths).flatMap((item) =>
         Object.values(item).map((operation) => operation.operationId),
@@ -201,12 +239,12 @@ test('NodeAdapter, localization, storage and Telegram bearer auth are wired', as
 
     await t.test('signed Telegram exchange and protected profile', async () => {
       const send = (initData) =>
-        fetch(base + '/api/auth/telegram', {
+        fetch(base + '/api/v1/auth/telegram', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ initData }),
         });
-      assert.equal((await fetch(base + '/api/auth/me')).status, 401);
+      assert.equal((await fetch(base + '/api/v1/auth/me')).status, 401);
       assert.equal((await send('invalid')).status, 401);
       const user = { id: 12345, first_name: 'Test' };
       const stale = sign({ user }, botToken, new Date(Date.now() - 360_000));
@@ -229,7 +267,7 @@ test('NodeAdapter, localization, storage and Telegram bearer auth are wired', as
       assert.equal((await send(duplicated)).status, 401);
       assert.equal(
         (
-          await fetch(base + '/api/auth/telegram', {
+          await fetch(base + '/api/v1/auth/telegram', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({}),
@@ -243,7 +281,7 @@ test('NodeAdapter, localization, storage and Telegram bearer auth are wired', as
       assert.equal(response.headers.get('set-cookie'), null);
       const { accessToken } = await response.json();
       assert.equal(typeof accessToken, 'string');
-      const profile = await fetch(base + '/api/auth/me', {
+      const profile = await fetch(base + '/api/v1/auth/me', {
         headers: { Authorization: 'Bearer ' + accessToken },
       });
       assert.equal(profile.status, 200);

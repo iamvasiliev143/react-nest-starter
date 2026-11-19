@@ -61,6 +61,7 @@ jobs:
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
           BASE_REPO_ID: ${{ github.event.pull_request.base.repo.id }}
           HEAD_REPO_ID: ${{ github.event.pull_request.head.repo.id }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
         run: |
           task_branch='^(feat|fix|chore|docs)/.+$'
           release_branch='^release/(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
@@ -73,6 +74,7 @@ jobs:
             case "$BASE_REF" in
               develop)
                 if [[ "$HEAD_REF" == main || "$HEAD_REF" =~ $release_branch ]]; then exit 0; fi
+                if [[ "$PR_AUTHOR" == 'dependabot[bot]' && "$HEAD_REF" == dependabot/?* ]]; then exit 0; fi
                 ;;
               staging)
                 if [[ "$HEAD_REF" =~ $release_branch ]]; then exit 0; fi
@@ -118,7 +120,8 @@ jobs:
           (startsWith(github.event.pull_request.head.ref, 'feat/') ||
           startsWith(github.event.pull_request.head.ref, 'fix/') ||
           startsWith(github.event.pull_request.head.ref, 'chore/') ||
-          startsWith(github.event.pull_request.head.ref, 'docs/'))
+          startsWith(github.event.pull_request.head.ref, 'docs/') ||
+          startsWith(github.event.pull_request.head.ref, 'dependabot/'))
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: printf '%s\n' "$PR_TITLE" | npm exec -- commitlint --verbose

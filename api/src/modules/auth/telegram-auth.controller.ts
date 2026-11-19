@@ -7,7 +7,6 @@ import {
   Post,
   UnauthorizedException,
   UseInterceptors,
-  VERSION_NEUTRAL,
 } from '@nestjs/common';
 import { CurrentUser, Public, TokenService } from '@nestjs/authentication';
 import { Can } from '@nestjs/authorization';
@@ -29,7 +28,7 @@ import { verifyTelegramInitData } from './telegram-init-data.js';
 const invalidCredentials = () =>
   new UnauthorizedException('Invalid Telegram credentials');
 
-@Controller({ path: 'auth', version: [VERSION_NEUTRAL, '1'] })
+@Controller({ path: 'auth', version: '1' })
 export class TelegramAuthController {
   constructor(
     private readonly config: AppConfig,

@@ -15,6 +15,76 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceUnavailableErrorResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -61,6 +131,66 @@
               }
             }
           },
+          "400": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseDto"
+                }
+              }
+            }
+          },
           "503": {
             "description": "The Health Check is not successful",
             "content": {
@@ -68,40 +198,47 @@
                 "schema": {
                   "allOf": [
                     {
-                      "$ref": "#/components/schemas/TerminusHealthCheckResult"
-                    }
-                  ],
-                  "properties": {
-                    "status": {
-                      "enum": [
-                        "error",
-                        "shutting_down"
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/TerminusHealthCheckResult"
+                        }
                       ],
-                      "example": "error"
-                    },
-                    "error": {
-                      "example": {
-                        "redis": {
-                          "status": "down",
-                          "message": "Could not connect",
-                          "responseTime": 3005
-                        }
-                      }
-                    },
-                    "details": {
-                      "example": {
-                        "database": {
-                          "status": "up",
-                          "responseTime": 12
+                      "properties": {
+                        "status": {
+                          "enum": [
+                            "error",
+                            "shutting_down"
+                          ],
+                          "example": "error"
                         },
-                        "redis": {
-                          "status": "down",
-                          "message": "Could not connect",
-                          "responseTime": 3005
+                        "error": {
+                          "example": {
+                            "redis": {
+                              "status": "down",
+                              "message": "Could not connect",
+                              "responseTime": 3005
+                            }
+                          }
+                        },
+                        "details": {
+                          "example": {
+                            "database": {
+                              "status": "up",
+                              "responseTime": 12
+                            },
+                            "redis": {
+                              "status": "down",
+                              "message": "Could not connect",
+                              "responseTime": 3005
+                            }
+                          }
                         }
                       }
+                    },
+                    {
+                      "$ref": "#/components/schemas/ServiceUnavailableErrorResponseDto"
                     }
-                  }
+                  ]
                 }
               }
             }
@@ -112,51 +249,9 @@
         ]
       }
     },
-    "/api/greeting": {
-      "get": {
-        "operationId": "StatusController_greeting",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Greeting"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Status"
-        ]
-      }
-    },
-    "/api/v1/greeting": {
-      "get": {
-        "operationId": "StatusController_greeting_v1",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Greeting"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Status"
-        ]
-      }
-    },
-    "/api/auth/telegram": {
+    "/api/v1/client-errors": {
       "post": {
-        "operationId": "TelegramAuthController_exchange",
+        "operationId": "ClientErrorsController_report_v1",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -164,13 +259,40 @@
             "application/json": {
               "schema": {
                 "type": "object",
+                "additionalProperties": false,
                 "required": [
-                  "initData"
+                  "source",
+                  "kind",
+                  "page"
                 ],
                 "properties": {
-                  "initData": {
+                  "source": {
                     "type": "string",
-                    "maxLength": 8192
+                    "enum": [
+                      "render",
+                      "bootstrap",
+                      "window",
+                      "unhandledrejection"
+                    ]
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "Error",
+                      "TypeError",
+                      "RangeError",
+                      "ReferenceError",
+                      "SyntaxError",
+                      "UnknownError"
+                    ]
+                  },
+                  "page": {
+                    "type": "string",
+                    "enum": [
+                      "home",
+                      "time",
+                      "other"
+                    ]
                   }
                 }
               }
@@ -178,19 +300,173 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "",
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "Request failed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TelegramToken"
+                  "$ref": "#/components/schemas/BadRequestErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceUnavailableErrorResponseDto"
                 }
               }
             }
           }
         },
         "tags": [
-          "TelegramAuth"
+          "Client errors"
+        ]
+      }
+    },
+    "/api/v1/greeting": {
+      "get": {
+        "operationId": "GreetingController_greeting_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Greeting"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceUnavailableErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Status"
         ]
       }
     },
@@ -227,34 +503,78 @@
                 }
               }
             }
-          }
-        },
-        "tags": [
-          "TelegramAuth"
-        ]
-      }
-    },
-    "/api/auth/me": {
-      "get": {
-        "operationId": "TelegramAuthController_me",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
+          },
+          "400": {
+            "description": "Request failed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TelegramUser"
+                  "$ref": "#/components/schemas/BadRequestErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceUnavailableErrorResponseDto"
                 }
               }
             }
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
         "tags": [
           "TelegramAuth"
         ]
@@ -271,6 +591,76 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TelegramUser"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceUnavailableErrorResponseDto"
                 }
               }
             }
@@ -464,6 +854,287 @@
         },
         "required": [
           "id"
+        ]
+      },
+      "ApiErrorResponseDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 400
+          },
+          "code": {
+            "type": "string",
+            "example": "HTTP_ERROR"
+          },
+          "message": {
+            "type": "string",
+            "example": "Request failed"
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "statusCode",
+          "code",
+          "message",
+          "requestId"
+        ]
+      },
+      "FieldErrorDto": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "example": "email"
+          },
+          "message": {
+            "type": "string",
+            "example": "Invalid value"
+          }
+        },
+        "required": [
+          "path",
+          "message"
+        ]
+      },
+      "BadRequestErrorResponseDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 400,
+            "enum": [
+              400
+            ]
+          },
+          "code": {
+            "type": "string",
+            "example": "INVALID_REQUEST",
+            "enum": [
+              "INVALID_REQUEST"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "example": "Invalid request"
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fieldErrors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorDto"
+            }
+          }
+        },
+        "required": [
+          "statusCode",
+          "code",
+          "message",
+          "requestId"
+        ]
+      },
+      "UnauthorizedErrorResponseDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 401,
+            "enum": [
+              401
+            ]
+          },
+          "code": {
+            "type": "string",
+            "example": "UNAUTHORIZED",
+            "enum": [
+              "UNAUTHORIZED"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "example": "Authentication required"
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "statusCode",
+          "code",
+          "message",
+          "requestId"
+        ]
+      },
+      "ForbiddenErrorResponseDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 403,
+            "enum": [
+              403
+            ]
+          },
+          "code": {
+            "type": "string",
+            "example": "FORBIDDEN",
+            "enum": [
+              "FORBIDDEN"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "example": "Access denied"
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "statusCode",
+          "code",
+          "message",
+          "requestId"
+        ]
+      },
+      "NotFoundErrorResponseDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 404,
+            "enum": [
+              404
+            ]
+          },
+          "code": {
+            "type": "string",
+            "example": "NOT_FOUND",
+            "enum": [
+              "NOT_FOUND"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "example": "Resource not found"
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "statusCode",
+          "code",
+          "message",
+          "requestId"
+        ]
+      },
+      "TooManyRequestsErrorResponseDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 429,
+            "enum": [
+              429
+            ]
+          },
+          "code": {
+            "type": "string",
+            "example": "RATE_LIMITED",
+            "enum": [
+              "RATE_LIMITED"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "example": "Too many requests"
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "statusCode",
+          "code",
+          "message",
+          "requestId"
+        ]
+      },
+      "InternalServerErrorResponseDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 500,
+            "enum": [
+              500
+            ]
+          },
+          "code": {
+            "type": "string",
+            "example": "INTERNAL_ERROR",
+            "enum": [
+              "INTERNAL_ERROR"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "example": "Internal server error"
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "statusCode",
+          "code",
+          "message",
+          "requestId"
+        ]
+      },
+      "ServiceUnavailableErrorResponseDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 503,
+            "enum": [
+              503
+            ]
+          },
+          "code": {
+            "type": "string",
+            "example": "SERVICE_UNAVAILABLE",
+            "enum": [
+              "SERVICE_UNAVAILABLE"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "example": "Service unavailable"
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "statusCode",
+          "code",
+          "message",
+          "requestId"
         ]
       }
     }

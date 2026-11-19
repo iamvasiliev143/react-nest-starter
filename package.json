@@ -12,7 +12,7 @@
   "scripts": {
     "dev": "concurrently --kill-others --names api,web \"npm run dev -w api\" \"npm run dev -w web\"",
     "typecheck": "npm run typecheck --workspaces",
-    "test": "npm test --workspaces",
+    "test": "node --test scripts/setup.test.mjs && npm test --workspaces",
     "build": "npm run build --workspaces",
     "check": "npm run lint && npm run format:check && npm run typecheck && npm test && npm run build",
     "lint": "eslint . --max-warnings 0",
@@ -24,7 +24,8 @@
     "graph:query": "engram query --graph .engram/graph.json",
     "api:types": "npm run openapi -w api && npm run api:types -w web",
     "db:migrate": "npm run db:migrate -w api",
-    "test:e2e": "npm run test:e2e -w web"
+    "test:e2e": "npm run test:e2e -w web",
+    "setup": "node scripts/setup.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.5.3",

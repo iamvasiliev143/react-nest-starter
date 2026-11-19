@@ -5,5 +5,13 @@
   "signInFailed": "Telegram sign-in failed. Try again.",
   "profileLoadFailed": "Could not load your profile",
   "invalidSession": "The server returned an invalid session",
-  "notFound": "Page not found."
+  "notFound": "Page not found.",
+  "recoveryTitle": "Could not load the application",
+  "recoveryDescription": "Reload the application to try again.",
+  "reload": "Reload",
+  "invalidRequest": "Check the entered data",
+  "forbidden": "Access denied",
+  "rateLimited": "Too many requests. Try again later.",
+  "serverError": "The server could not complete the request",
+  "unknownError": "The request failed"
 }

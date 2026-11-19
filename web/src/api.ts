@@ -1,10 +1,14 @@
 import createClient from 'openapi-fetch';
 import type { paths } from './api-schema';
 import { ClientError } from './client-error';
+import { apiErrors } from './api-errors';
 import { expireSession, getAccessToken, startSession } from './session';
 
 const publicApi = createClient<paths>({ credentials: 'omit' });
 const protectedApi = createClient<paths>({ credentials: 'omit' });
+
+publicApi.use(apiErrors);
+protectedApi.use(apiErrors);
 
 protectedApi.use({
   onRequest({ request }) {

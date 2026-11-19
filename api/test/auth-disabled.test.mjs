@@ -21,7 +21,7 @@ test('Telegram sign-in answers 503 before body validation when disabled', async 
     await app.listen(0, '127.0.0.1');
     const base = await app.getUrl();
     for (const body of [{}, { initData: 'invalid' }]) {
-      const response = await fetch(base + '/api/auth/telegram', {
+      const response = await fetch(base + '/api/v1/auth/telegram', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),

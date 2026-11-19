@@ -7,8 +7,9 @@
 Нужны Node.js 22.13+, npm и Docker. Для запуска API нужны настройки PostgreSQL, Redis и S3. Доступность всех трёх сервисов проверяют readiness и тесты.
 
 ```sh
+npm run setup
 npm ci
-cp api/.env.example api/.env
+npm run hooks:install
 docker compose up -d --wait postgres redis s3
 docker compose run --rm --no-deps s3-buckets
 npm run db:migrate
@@ -18,6 +19,14 @@ npm run dev
 Тесты API используют те же контейнеры, но отдельные хранилища: базу `starter_test` в PostgreSQL, уникальный префикс ключей в Redis DB 1 и бакет `starter-test`.
 
 Открой [интерфейс](http://127.0.0.1:5173). Vite проксирует `/api/*` на NestJS по адресу `127.0.0.1:3000`. Для запуска одного приложения используй `npm run dev -w web` или `npm run dev -w api`.
+
+## Создание проекта из шаблона
+
+В новом клоне выполните `npm run setup -- --name my-project`. Команда переименует корневой пакет и workspaces в `my-project`, `my-project-api`, `my-project-web`, синхронизирует npm lockfile и создаст `api/.env`. Повторный запуск сохраняет существующий env-файл. Без `--name` используются текущие имена.
+
+Если при первом запуске задана переменная окружения `TELEGRAM_BOT_TOKEN`, setup запишет её в новый env-файл и сгенерирует секрет доступа. Значения секретов в вывод не попадают. При пустом токене авторизация Telegram остаётся выключенной. Существующие настройки редактируйте в `api/.env`.
+
+Команда проверяет Node.js, доступность npm и Docker и TCP-порты настроенных PostgreSQL, Redis и S3. После переименования выполните `npm ci` для обновления workspace-ссылок и `npm run hooks:install`. Команды запуска контейнеров, создания бакетов и миграций приведены выше.
 
 ## Структура API
 
