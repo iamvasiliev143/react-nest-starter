@@ -13,15 +13,10 @@ export class PostgresHealthIndicator {
     private readonly healthIndicator: HealthIndicatorService,
   ) {}
 
-  /** Без DATABASE_URL индикатор не участвует в readiness. */
-  get enabled() {
-    return this.postgres.isConfigured;
-  }
-
   async check(key: string): Promise<HealthIndicatorResult> {
     const indicator = this.healthIndicator.check(key);
     try {
-      await this.postgres.db?.execute(sql`select 1`);
+      await this.postgres.db.execute(sql`select 1`);
       return indicator.up();
     } catch {
       return indicator.down();

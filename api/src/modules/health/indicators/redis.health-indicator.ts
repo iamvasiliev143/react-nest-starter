@@ -12,15 +12,10 @@ export class RedisHealthIndicator {
     private readonly healthIndicator: HealthIndicatorService,
   ) {}
 
-  /** Без REDIS_URL индикатор не участвует в readiness. */
-  get enabled() {
-    return this.redis.isConfigured;
-  }
-
   async check(key: string): Promise<HealthIndicatorResult> {
     const indicator = this.healthIndicator.check(key);
     try {
-      const reply = await this.redis.client?.ping();
+      const reply = await this.redis.client.ping();
       return reply === 'PONG' ? indicator.up() : indicator.down();
     } catch {
       return indicator.down();

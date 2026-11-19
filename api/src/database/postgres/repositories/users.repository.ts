@@ -9,20 +9,16 @@ export type UpsertUserInput = Pick<
   'id' | 'firstName' | 'lastName' | 'username' | 'languageCode'
 >;
 
-/** Запросы к таблице users. Без DATABASE_URL репозиторий недоступен. */
+/** Запросы к таблице users. */
 @Injectable()
 export class UsersRepository {
   constructor(private readonly postgres: PostgresService) {}
-
-  get isConfigured() {
-    return this.postgres.isConfigured;
-  }
 
   /** Создаёт пользователя или обновляет профиль; updated_at меняется только при изменении полей. */
   async upsert(input: UpsertUserInput): Promise<void> {
     const { id, ...fields } = input;
     await this.postgres.db
-      ?.insert(users)
+      .insert(users)
       .values({ id, ...fields })
       .onConflictDoUpdate({
         target: users.id,
@@ -35,7 +31,6 @@ export class UsersRepository {
   }
 
   async findId(id: string): Promise<Pick<UserRow, 'id'> | null> {
-    if (!this.postgres.db) return null;
     const [user] = await this.postgres.db
       .select({ id: users.id })
       .from(users)

@@ -13,6 +13,29 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    # API всегда работает с PostgreSQL и Redis: те же образы и порты, что в docker-compose.yml.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: starter
+          POSTGRES_PASSWORD: starter-local
+          POSTGRES_DB: starter
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd "pg_isready -U starter -d starter"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6380:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://starter:starter-local@127.0.0.1:5434/starter
+      REDIS_URL: redis://127.0.0.1:6380
     steps:
       - name: Check pull request route
         if: github.event_name == 'pull_request'

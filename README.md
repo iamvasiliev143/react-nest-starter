@@ -4,12 +4,17 @@
 
 ## Запуск
 
-Нужны Node.js 22.13+ и npm.
+Нужны Node.js 22.13+, npm и Docker. API всегда работает с PostgreSQL и Redis: без них он не запустится, а `npm run check` не пройдёт.
 
 ```sh
 npm ci
+cp api/.env.example api/.env
+docker compose up -d --wait
+npm run db:migrate
 npm run dev
 ```
+
+Тесты API используют те же контейнеры, но отдельные базы: `starter_test` в PostgreSQL и базу №1 в Redis.
 
 Открой [интерфейс](http://127.0.0.1:5173). Vite проксирует `/api/*` на NestJS по адресу `127.0.0.1:3000`. Для запуска одного приложения используй `npm run dev -w web` или `npm run dev -w api`.
 
@@ -17,7 +22,7 @@ npm run dev
 
 - `api/src/modules/` содержит фичи NestJS. Модуль владеет своими контроллерами, сервисами, DTO (`dto/`) и внутренними типами (`interfaces/`). Индикаторы readiness лежат в `modules/health/indicators/`.
 - `api/src/database/` содержит по папке на хранилище. В `postgres/` лежат сервис подключения, таблицы Drizzle (`schema/<table>.schema.ts`), запросы (`repositories/<table>.repository.ts`) и миграции (`migrations/`). В `redis/` лежит клиент Redis.
-- `api/src/common/` содержит общую инфраструктуру, включая инструментацию Observe.
+- `api/src/common/` содержит общую инфраструктуру: конфигурацию, Observe, лимиты запросов в Redis (`throttler/`), хранилище файлов и i18n.
 
 Для правил размещения контрактов и зависимостей между фичами смотри [nestjs-practices](.claude/skills/nestjs-practices/SKILL.md).
 

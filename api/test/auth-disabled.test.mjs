@@ -4,13 +4,15 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { ConfigService } from '@nestjs/config';
+import { prepareTestServices } from './support/environment.mjs';
 
 // Отдельный процесс: конфигурация читается один раз при загрузке AppModule.
 test('Telegram sign-in answers 503 before body validation when disabled', async () => {
   const storagePath = await mkdtemp(join(tmpdir(), 'starter-storage-'));
   process.env.NODE_ENV = 'test';
-  process.env.DATABASE_URL = '';
-  process.env.REDIS_URL = '';
+  const { databaseUrl, redisUrl } = await prepareTestServices();
+  process.env.DATABASE_URL = databaseUrl;
+  process.env.REDIS_URL = redisUrl;
   process.env.STORAGE_PATH = storagePath;
   process.env.TELEGRAM_BOT_TOKEN = '';
   process.env.AUTH_TOKEN_SECRET = '';

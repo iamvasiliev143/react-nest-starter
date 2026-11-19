@@ -1,11 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { Public } from '@nestjs/authentication';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import {
-  HealthCheck,
-  HealthCheckService,
-  type HealthIndicatorFunction,
-} from '@nestjs/terminus';
+import { HealthCheck, HealthCheckService } from '@nestjs/terminus';
 import { SkipThrottle } from '@nestjs/throttler';
 import { HealthStatus } from './dto/health-status.response.dto.js';
 import { PostgresHealthIndicator } from './indicators/postgres.health-indicator.js';
@@ -37,10 +33,9 @@ export class HealthController {
   })
   @HealthCheck()
   readiness() {
-    const checks: HealthIndicatorFunction[] = [];
-    if (this.postgres.enabled)
-      checks.push(() => this.postgres.check('postgres'));
-    if (this.redis.enabled) checks.push(() => this.redis.check('redis'));
-    return this.healthCheck.check(checks);
+    return this.healthCheck.check([
+      () => this.postgres.check('postgres'),
+      () => this.redis.check('redis'),
+    ]);
   }
 }

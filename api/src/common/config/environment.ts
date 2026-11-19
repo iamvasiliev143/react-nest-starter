@@ -11,14 +11,8 @@ const schema = z
     NODE_ENV: z
       .enum(['development', 'test', 'production'])
       .default('development'),
-    DATABASE_URL: z.preprocess(
-      (value) => (value === '' ? undefined : value),
-      z.url({ protocol: /^postgres(?:ql)?$/ }).optional(),
-    ),
-    REDIS_URL: z.preprocess(
-      (value) => (value === '' ? undefined : value),
-      z.url({ protocol: /^rediss?$/ }).optional(),
-    ),
+    DATABASE_URL: z.url({ protocol: /^postgres(?:ql)?$/ }),
+    REDIS_URL: z.url({ protocol: /^rediss?$/ }),
     STORAGE_PATH: z.string().min(1).default('.storage'),
     OBSERVE_APP_KEY: optionalText,
     OBSERVE_APP_SECRET: optionalText,

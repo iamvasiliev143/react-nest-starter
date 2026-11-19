@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { Storage } from '@nestjs/storage';
 import { sign } from '@tma.js/init-data-node';
+import { prepareTestServices } from './support/environment.mjs';
 
 // Подписывает initData с повторяющимися ключами: подпись валидна, и отказ
 // может дать только проверка дубликатов.
@@ -25,8 +26,9 @@ test('NodeAdapter, localization, storage and Telegram bearer auth are wired', as
   const storagePath = await mkdtemp(join(tmpdir(), 'starter-storage-'));
   const botToken = '123456:fixture-token';
   process.env.NODE_ENV = 'test';
-  process.env.DATABASE_URL = '';
-  process.env.REDIS_URL = '';
+  const { databaseUrl, redisUrl } = await prepareTestServices();
+  process.env.DATABASE_URL = databaseUrl;
+  process.env.REDIS_URL = redisUrl;
   process.env.STORAGE_PATH = storagePath;
   process.env.TELEGRAM_BOT_TOKEN = botToken;
   process.env.AUTH_TOKEN_SECRET = 'example-secret-only-used-in-tests-123';
@@ -57,77 +59,52 @@ test('NodeAdapter, localization, storage and Telegram bearer auth are wired', as
       assert.deepEqual(await greeting.json(), { message: 'Привет' });
     });
 
-    await t.test(
-      'readiness skips optional PostgreSQL when unconfigured',
-      async () => {
-        const response = await fetch(base + '/api/health/ready');
-        assert.equal(response.status, 200);
-        assert.match(response.headers.get('cache-control'), /no-store/);
-        assert.deepEqual(await response.json(), {
-          status: 'ok',
-          info: {},
-          error: {},
-          details: {},
-        });
-      },
-    );
+    const bothUp = {
+      postgres: { status: 'up' },
+      redis: { status: 'up' },
+    };
+
+    await t.test('readiness checks PostgreSQL and Redis', async () => {
+      const response = await fetch(base + '/api/health/ready');
+      assert.equal(response.status, 200);
+      assert.match(response.headers.get('cache-control'), /no-store/);
+      assert.deepEqual(await response.json(), {
+        status: 'ok',
+        info: bothUp,
+        error: {},
+        details: bothUp,
+      });
+    });
 
     await t.test(
-      'readiness reports configured PostgreSQL and liveness stays up when it fails',
+      'readiness reports PostgreSQL down and liveness stays up',
       async (t) => {
-        const postgres = app.get(PostgresService);
-        t.mock.getter(postgres, 'isConfigured', () => true);
-        let databaseReady = true;
-        const execute = t.mock.fn(async () => {
-          if (!databaseReady) throw new Error('connection refused');
-        });
-        postgres.db = { execute };
-        t.after(() => (postgres.db = undefined));
-
-        const ready = await fetch(base + '/api/health/ready');
-        assert.equal(ready.status, 200);
-        assert.deepEqual(await ready.json(), {
-          status: 'ok',
-          info: { postgres: { status: 'up' } },
-          error: {},
-          details: { postgres: { status: 'up' } },
+        const { db } = app.get(PostgresService);
+        const execute = t.mock.method(db, 'execute', async () => {
+          throw new Error('connection refused');
         });
 
-        databaseReady = false;
         const unavailable = await fetch(base + '/api/health/ready');
         assert.equal(unavailable.status, 503);
         assert.deepEqual(await unavailable.json(), {
           status: 'error',
-          info: {},
+          info: { redis: { status: 'up' } },
           error: { postgres: { status: 'down' } },
-          details: { postgres: { status: 'down' } },
+          details: { postgres: { status: 'down' }, redis: { status: 'up' } },
         });
         const alive = await fetch(base + '/api/health');
         assert.equal(alive.status, 200);
         assert.deepEqual(await alive.json(), { status: 'ok' });
-        assert.equal(execute.mock.callCount(), 2);
+        assert.equal(execute.mock.callCount(), 1);
       },
     );
 
-    await t.test('readiness reports configured Redis', async (t) => {
-      const redis = app.get(RedisService);
-      t.mock.getter(redis, 'isConfigured', () => true);
-      let redisReady = true;
-      redis.client = {
-        ping: async () => {
-          if (!redisReady) throw new Error('connection refused');
-          return 'PONG';
-        },
-      };
-      t.after(() => (redis.client = undefined));
-
-      const ready = await fetch(base + '/api/health/ready');
-      assert.equal(ready.status, 200);
-      assert.deepEqual((await ready.json()).details, {
-        redis: { status: 'up' },
+    await t.test('readiness reports Redis down', async (t) => {
+      const { client } = app.get(RedisService);
+      t.mock.method(client, 'ping', async () => {
+        throw new Error('connection refused');
       });
 
-      redisReady = false;
       const unavailable = await fetch(base + '/api/health/ready');
       assert.equal(unavailable.status, 503);
       assert.deepEqual((await unavailable.json()).error, {
