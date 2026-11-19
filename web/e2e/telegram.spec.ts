@@ -7,6 +7,11 @@ test('initializes a Telegram WebView and signs in again after a protected 401', 
     auth_date: String(Math.floor(Date.now() / 1000)),
     hash: 'fixture',
     signature: 'fixture',
+    user: JSON.stringify({
+      id: 12345,
+      first_name: 'Test',
+      language_code: 'en-GB',
+    }),
   }).toString();
 
   await page.addInitScript(() => {
@@ -47,15 +52,20 @@ test('initializes a Telegram WebView and signs in again after a protected 401', 
   });
 
   let exchanges = 0;
+  let acceptTelegramData = false;
   let rejectProfile = false;
-  await page.route('**/api/auth/telegram', async (route) => {
+  await page.route('**/api/v1/auth/telegram', async (route) => {
     expect(route.request().postDataJSON()).toEqual({ initData });
+    if (!acceptTelegramData) {
+      await route.fulfill({ status: 401, json: { message: 'Unauthorized' } });
+      return;
+    }
     exchanges += 1;
     await route.fulfill({
       json: { accessToken: 'fixture-' + exchanges, expiresIn: 900 },
     });
   });
-  await page.route('**/api/auth/me', async (route) => {
+  await page.route('**/api/v1/auth/me', async (route) => {
     expect(route.request().headers().authorization).toBe(
       'Bearer fixture-' + exchanges,
     );
@@ -77,6 +87,7 @@ test('initializes a Telegram WebView and signs in again after a protected 401', 
     }),
   });
   await page.goto('/#' + params.toString());
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   await expect
     .poll(() =>
       page.evaluate(
@@ -89,16 +100,20 @@ test('initializes a Telegram WebView and signs in again after a protected 401', 
     'background-color',
     'rgb(238, 244, 250)',
   );
-  await page.getByRole('button', { name: 'Войти через Telegram' }).click();
-  await expect(
-    page.getByText('Вход выполнен. Telegram ID 12345'),
-  ).toBeVisible();
+  const signIn = page.getByRole('button', { name: 'Sign in with Telegram' });
+  await signIn.click();
+  await expect(page.getByRole('alert')).toHaveText(
+    'Could not verify your Telegram data. Reopen the Mini App from Telegram.',
+  );
+  acceptTelegramData = true;
+  await signIn.click();
+  await expect(page.getByText('Signed in. Telegram ID 12345')).toBeVisible();
   expect(await page.context().cookies()).toEqual([]);
 
   rejectProfile = true;
-  await page.getByRole('link', { name: 'Дата и время' }).click();
+  await page.getByRole('link', { name: 'Date and time' }).click();
   await expect(
-    page.getByRole('heading', { name: 'Дата и время' }),
+    page.getByRole('heading', { name: 'Date and time' }),
   ).toBeVisible();
   await page.evaluate(() => {
     const { Telegram } = window as Window & {
@@ -108,17 +123,15 @@ test('initializes a Telegram WebView and signs in again after a protected 401', 
     };
     Telegram?.WebView?.receiveEvent('back_button_pressed', {});
   });
-  await expect(page.getByText('Сессия истекла.')).toBeVisible();
+  await expect(page.getByText('Session expired.')).toBeVisible();
 
   rejectProfile = false;
-  await page.getByRole('button', { name: 'Войти снова' }).click();
-  await expect(
-    page.getByText('Вход выполнен. Telegram ID 12345'),
-  ).toBeVisible();
+  await page.getByRole('button', { name: 'Sign in again' }).click();
+  await expect(page.getByText('Signed in. Telegram ID 12345')).toBeVisible();
   expect(exchanges).toBe(2);
-  await page.getByRole('button', { name: 'Выйти' }).click();
+  await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(
-    page.getByRole('button', { name: 'Войти через Telegram' }),
+    page.getByRole('button', { name: 'Sign in with Telegram' }),
   ).toBeVisible();
 });
 
@@ -132,6 +145,7 @@ test('loads the public app when the Telegram bridge has no launch parameters', a
   });
 
   await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
   await expect(page.getByRole('status')).toHaveText('API подключён');
   await expect(
     page.getByRole('button', { name: 'Войти через Telegram' }),

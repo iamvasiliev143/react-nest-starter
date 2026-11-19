@@ -10,8 +10,6 @@ type ThrottlerStorageRecord = Awaited<
   ReturnType<ThrottlerStorage['increment']>
 >;
 
-const PREFIX = 'throttler:';
-
 /**
  * Скользящее окно, как у встроенного ThrottlerStorageService:
  * KEYS[1] — sorted set с отметками попаданий, KEYS[2] — ключ блокировки.
@@ -73,6 +71,7 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
 
   constructor(
     private readonly redis: Redis,
+    private readonly keyPrefix = 'throttler',
     private readonly fallback: ThrottlerStorage = new ThrottlerStorageService(),
   ) {}
 
@@ -83,7 +82,7 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
     blockDuration: number,
     throttlerName: string,
   ): Promise<ThrottlerStorageRecord> {
-    const base = `${PREFIX}${throttlerName}:${key}`;
+    const base = `${this.keyPrefix}:${throttlerName}:${key}`;
     // Экземпляры в разных контейнерах могут иметь одинаковый PID.
     const member = `${this.instanceId}:${this.sequence++}`;
     // Во время переподключения не ждём Redis: каждый запрос получил бы

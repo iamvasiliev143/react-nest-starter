@@ -3,6 +3,7 @@ import {
   initFp,
   isTMA,
   miniApp,
+  retrieveLaunchParamsFp,
   retrieveRawInitDataFp,
   themeParams,
   viewport,
@@ -10,10 +11,15 @@ import {
 
 let initialized = false;
 let initData: string | undefined;
+let languageCode: string | undefined;
 
 export function initializeTelegram() {
   if (!isTMA() || initFp()._tag === 'Left') return;
   initialized = true;
+  const launch = retrieveLaunchParamsFp();
+  if (launch._tag === 'Right') {
+    languageCode = launch.right.tgWebAppData?.user?.language_code;
+  }
   const raw = retrieveRawInitDataFp();
   if (raw._tag === 'Right' && raw.right._tag === 'Some') {
     initData = raw.right.value;
@@ -41,6 +47,10 @@ export function telegramReady() {
 
 export function getTelegramInitData() {
   return initData;
+}
+
+export function getTelegramLanguage() {
+  return languageCode;
 }
 
 export function showTelegramBackButton(onBack: () => void) {

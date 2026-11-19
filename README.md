@@ -15,7 +15,7 @@ npm run db:migrate
 npm run dev
 ```
 
-Тесты API используют те же контейнеры, но отдельные хранилища: базу `starter_test` в PostgreSQL, базу №1 в Redis и бакет `starter-test`.
+Тесты API используют те же контейнеры, но отдельные хранилища: базу `starter_test` в PostgreSQL, уникальный префикс ключей в Redis DB 1 и бакет `starter-test`.
 
 Открой [интерфейс](http://127.0.0.1:5173). Vite проксирует `/api/*` на NestJS по адресу `127.0.0.1:3000`. Для запуска одного приложения используй `npm run dev -w web` или `npm run dev -w api`.
 

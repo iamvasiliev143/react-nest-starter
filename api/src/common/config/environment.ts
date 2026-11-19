@@ -13,6 +13,15 @@ const schema = z
       .default('development'),
     DATABASE_URL: z.url({ protocol: /^postgres(?:ql)?$/ }),
     REDIS_URL: z.url({ protocol: /^rediss?$/ }),
+    QUEUE_REDIS_URL: z.preprocess(
+      (value) => (value === '' ? undefined : value),
+      z.url({ protocol: /^rediss?$/ }).optional(),
+    ),
+    REALTIME_CHANNEL: z.string().min(1).default('starter-api:realtime'),
+    THROTTLER_KEY_PREFIX: z
+      .string()
+      .regex(/^[a-zA-Z0-9:_-]+$/)
+      .default('throttler'),
     S3_ENDPOINT: z.preprocess(
       (value) => (value === '' ? undefined : value),
       z.url({ protocol: /^https?$/ }).optional(),

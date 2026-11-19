@@ -131,6 +131,36 @@ jobs:
           for bucket in starter starter-test; do
             aws --endpoint-url "$S3_ENDPOINT" s3api create-bucket --bucket "$bucket"
           done
+      - name: Check generated OpenAPI and client types
+        run: |
+          git ls-files --error-unmatch -- api/openapi.json web/src/api-schema.d.ts
+          npm run api:types
+          git diff --exit-code HEAD -- api/openapi.json web/src/api-schema.d.ts
       - run: npm run check
       - run: npm exec -w web -- playwright install --with-deps chromium
       - run: npm run test:e2e
+      - name: Package tested staging build
+        if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          bundle="$(mktemp -d "$RUNNER_TEMP/release-$GITHUB_SHA.XXXXXX")"
+          mkdir -p "$bundle/api/scripts" "$bundle/api/src/database/postgres" "$bundle/web"
+          cp package.json package-lock.json "$bundle/"
+          cp api/package.json "$bundle/api/"
+          cp api/scripts/migrate.mjs "$bundle/api/scripts/"
+          cp -R api/dist "$bundle/api/"
+          cp -R api/src/database/postgres/migrations "$bundle/api/src/database/postgres/"
+          cp web/package.json "$bundle/web/"
+          cp -R web/dist "$bundle/web/"
+          printf '{"sha":"%s","tree":"%s","nodeVersion":"%s"}\n' \
+            "$GITHUB_SHA" "$(git rev-parse 'HEAD^{tree}')" "$(node --version)" > "$bundle/release.json"
+          tar -czf "$RUNNER_TEMP/release-$GITHUB_SHA.tar.gz" -C "$bundle" .
+      - name: Upload tested staging build
+        if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-${{ github.sha }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/release-${{ github.sha }}.tar.gz
+          if-no-files-found: error
+          compression-level: 0

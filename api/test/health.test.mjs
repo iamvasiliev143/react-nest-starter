@@ -50,6 +50,12 @@ test('NodeAdapter, localization, storage and Telegram bearer auth are wired', as
       });
       assert.equal(greeting.headers.get('content-language'), 'ru');
       assert.deepEqual(await greeting.json(), { message: 'Привет' });
+      const v1 = await fetch(base + '/api/v1/greeting', {
+        headers: { 'Accept-Language': 'ru' },
+      });
+      assert.equal(v1.status, 200);
+      assert.deepEqual(await v1.json(), { message: 'Привет' });
+      assert.equal((await fetch(base + '/api/v1/health')).status, 404);
     });
 
     const allUp = {
@@ -172,7 +178,17 @@ test('NodeAdapter, localization, storage and Telegram bearer auth are wired', as
       assert.equal(await disk.exists(key), false);
       const spec = await fetch(base + '/api/openapi.json');
       assert.equal(spec.status, 200);
-      assert.ok((await spec.json()).paths['/api/auth/telegram']);
+      const { paths } = await spec.json();
+      assert.ok(paths['/api/auth/telegram']);
+      assert.ok(paths['/api/v1/auth/telegram']);
+      assert.equal(
+        paths['/api/greeting'].get.operationId,
+        'StatusController_greeting',
+      );
+      const operationIds = Object.values(paths).flatMap((item) =>
+        Object.values(item).map((operation) => operation.operationId),
+      );
+      assert.equal(new Set(operationIds).size, operationIds.length);
 
       const docs = await fetch(base + '/api/docs');
       assert.equal(docs.status, 200);

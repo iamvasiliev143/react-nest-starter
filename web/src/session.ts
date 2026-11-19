@@ -1,3 +1,5 @@
+import { ClientError } from './client-error';
+
 type Session = {
   accessToken: string;
   expiresAt: number;
@@ -38,7 +40,7 @@ export function startSession(accessToken: string, expiresIn: number) {
     ttl <= 0 ||
     ttl > 2_147_483_647
   ) {
-    throw new Error('Сервер вернул некорректную сессию');
+    throw new ClientError('errors.invalidSession');
   }
   publish({
     status: 'active',

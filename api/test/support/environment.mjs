@@ -1,7 +1,7 @@
+import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
-import { Redis } from 'ioredis';
 import pg from 'pg';
 
 // Сервисы из docker-compose.yml. В CI адреса задаются переменными окружения.
@@ -30,7 +30,7 @@ const LOCK_ID = 7_310_001;
 
 /**
  * Готовит изолированные хранилища для тестов: `starter_test` в PostgreSQL с
- * применёнными миграциями, чистую базу Redis №1 и бакет `starter-test`.
+ * применёнными миграциями, отдельный префикс в Redis DB 1 и бакет `starter-test`.
  * Возвращает переменные окружения API.
  */
 export async function prepareTestServices() {
@@ -55,16 +55,11 @@ export async function prepareTestServices() {
 
     const redisUrl = new URL(REDIS_URL);
     redisUrl.pathname = '/' + TEST_REDIS_DB;
-    const redis = new Redis(redisUrl.href);
-    try {
-      await redis.flushdb();
-    } finally {
-      redis.disconnect();
-    }
 
     return {
       DATABASE_URL: url.href,
       REDIS_URL: redisUrl.href,
+      THROTTLER_KEY_PREFIX: 'throttler:test:' + randomUUID(),
       ...S3,
     };
   } finally {

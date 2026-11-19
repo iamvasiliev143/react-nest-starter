@@ -1,0 +1,36 @@
+{
+  "navigation": {
+    "sections": "Разделы",
+    "api": "Состояние API",
+    "time": "Дата и время"
+  },
+  "health": {
+    "section": "Состояние API и вход",
+    "checking": "Проверяем API…",
+    "available": "API подключён",
+    "check": "Проверить API"
+  },
+  "auth": {
+    "signedIn": "Вход выполнен. Telegram ID {{id}}",
+    "loadingProfile": "Загружаем профиль…",
+    "profileUnavailable": "Профиль недоступен",
+    "retryProfile": "Повторить загрузку профиля",
+    "signOut": "Выйти",
+    "expired": "Сессия истекла.",
+    "signInAgain": "Войти снова",
+    "signIn": "Войти через Telegram"
+  },
+  "time": {
+    "timezone": "Часовой пояс",
+    "show": "Показать время"
+  },
+  "errors": {
+    "signInRequired": "Войди через Telegram, чтобы продолжить",
+    "apiUnavailable": "API недоступен",
+    "invalidTelegramData": "Не удалось подтвердить данные. Открой Mini App заново из Telegram.",
+    "signInFailed": "Вход через Telegram не удался. Попробуй ещё раз.",
+    "profileLoadFailed": "Не удалось загрузить профиль",
+    "invalidSession": "Сервер вернул некорректную сессию",
+    "notFound": "Страница не найдена."
+  }
+}

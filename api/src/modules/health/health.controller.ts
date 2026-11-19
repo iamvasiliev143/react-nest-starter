@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, VERSION_NEUTRAL } from '@nestjs/common';
 import { Public } from '@nestjs/authentication';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { HealthCheck, HealthCheckService } from '@nestjs/terminus';
@@ -11,7 +11,7 @@ import { S3HealthIndicator } from './indicators/s3.health-indicator.js';
 @Public()
 @ApiTags('Status')
 @SkipThrottle()
-@Controller('health')
+@Controller({ path: 'health', version: VERSION_NEUTRAL })
 export class HealthController {
   constructor(
     private readonly healthCheck: HealthCheckService,

@@ -133,6 +133,27 @@
         ]
       }
     },
+    "/api/v1/greeting": {
+      "get": {
+        "operationId": "StatusController_greeting_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Greeting"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Status"
+        ]
+      }
+    },
     "/api/auth/telegram": {
       "post": {
         "operationId": "TelegramAuthController_exchange",
@@ -173,9 +194,75 @@
         ]
       }
     },
+    "/api/v1/auth/telegram": {
+      "post": {
+        "operationId": "TelegramAuthController_exchange_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "initData"
+                ],
+                "properties": {
+                  "initData": {
+                    "type": "string",
+                    "maxLength": 8192
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramToken"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "TelegramAuth"
+        ]
+      }
+    },
     "/api/auth/me": {
       "get": {
         "operationId": "TelegramAuthController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramUser"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "TelegramAuth"
+        ]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "operationId": "TelegramAuthController_me_v1",
         "parameters": [],
         "responses": {
           "200": {
