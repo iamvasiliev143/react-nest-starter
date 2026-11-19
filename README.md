@@ -4,12 +4,13 @@
 
 ## Запуск
 
-Нужны Node.js 22.13+, npm и Docker. API всегда работает с PostgreSQL, Redis и S3-хранилищем: без них он не запустится, а `npm run check` не пройдёт.
+Нужны Node.js 22.13+, npm и Docker. Для запуска API нужны настройки PostgreSQL, Redis и S3. Доступность всех трёх сервисов проверяют readiness и тесты.
 
 ```sh
 npm ci
 cp api/.env.example api/.env
-docker compose up -d --wait
+docker compose up -d --wait postgres redis s3
+docker compose run --rm --no-deps s3-buckets
 npm run db:migrate
 npm run dev
 ```
@@ -54,5 +55,7 @@ npm run dev
 - [Telegram Mini App, PostgreSQL, Redis, Observe и OpenAPI](docs/integrations.md) описаны в руководстве по интеграциям.
 
 ## Деплой
+
+Docker Compose используется для локальных PostgreSQL, Redis и S3. В разработке запускай Vite и NestJS через `npm run dev`.
 
 После сборки раздавай `web/dist` как статические файлы и направляй навигацию SPA на `index.html`. Проксируй запросы `/api/*` с того же домена на NestJS, сохраняя префикс `/api`. Запусти собранный API через `npm run start -w api`. Адрес и порт задаются переменными `HOST` и `PORT`.

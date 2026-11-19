@@ -43,7 +43,7 @@ codex -c 'mcp_servers.notion.url="https://mcp.notion.com/mcp"' mcp login notion
 DATABASE_URL=postgresql://starter:starter-local@127.0.0.1:5434/starter
 ```
 
-Затем выполни `npm run db:migrate`. `DATABASE_URL` обязателен: без него API не запустится. Вход создаёт или обновляет запись Telegram-пользователя.
+Затем выполни `npm run db:migrate`. `DATABASE_URL` обязателен: без него API не запустится. Вход создаёт или обновляет запись в `users` по Telegram ID. В базовой схеме хранятся имя, фамилия, username, язык и даты создания и обновления. Профиль берётся из проверенных данных Telegram.
 
 Код базы лежит в `api/src/database/postgres/`: таблицы Drizzle в `schema/`, запросы в `repositories/`, миграции в `migrations/`. Для новой миграции измени схему и выполни `npm run db:generate -w api`.
 
@@ -59,7 +59,7 @@ REDIS_URL=redis://127.0.0.1:6380
 
 ## Файловое хранилище
 
-Файлы хранятся в S3-совместимом хранилище, это обязательная зависимость API. Локально `docker compose up -d --wait` поднимает [RustFS](https://github.com/rustfs/rustfs) на порту `9010` (консоль: http://127.0.0.1:9011, логин `starter`, пароль `starter-local-secret`), а одноразовый сервис `s3-buckets` создаёт бакеты `starter` и `starter-test`. Образы MinIO больше не публикуются на Docker Hub, поэтому используется RustFS с тем же S3 API.
+Файлы хранятся в S3-совместимом хранилище, это обязательная зависимость API. Локально `docker compose up -d --wait s3` поднимает [RustFS](https://github.com/rustfs/rustfs) на порту `9010` (консоль: http://127.0.0.1:9011, логин `starter`, пароль `starter-local-secret`), а команда `docker compose run --rm --no-deps s3-buckets` создаёт бакеты `starter` и `starter-test`. Образы MinIO больше не публикуются на Docker Hub, поэтому используется RustFS с тем же S3 API.
 
 Настройки задаются переменными `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID` и `S3_SECRET_ACCESS_KEY`. Для AWS S3 оставь `S3_ENDPOINT` пустым; для Cloudflare R2 и самостоятельно размещённых хранилищ укажи адрес сервиса, и бакет будет адресоваться в пути. Код лежит в `api/src/database/s3/`, а фичи получают диск через `Storage` из Nest DI. Readiness проверяет доступ к бакету индикатором `s3`.
 

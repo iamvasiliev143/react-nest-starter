@@ -20,23 +20,28 @@ export function createOpenApiDocument(app: INestApplication) {
 }
 
 export async function createApp({ docs = true } = {}) {
+  const isProduction = process.env.NODE_ENV === 'production';
+
   const app = await NestFactory.create<NestNodeApplication>(
     AppModule,
     new NodeAdapter(),
     {
       instrument: ObserveInstrument,
       logger: new ConsoleLogger({
-        json: process.env.NODE_ENV === 'production',
+        json: isProduction,
       }),
     },
   );
   app.setGlobalPrefix('api');
   app.use(helmet());
+
   const config = app.get(AppConfig);
   if (docs && config.get('NODE_ENV', { infer: true }) !== 'production') {
-    SwaggerModule.setup('api/docs', app, createOpenApiDocument(app), {
-      jsonDocumentUrl: '/api/openapi.json',
+    SwaggerModule.setup('/docs', app, createOpenApiDocument(app), {
+      useGlobalPrefix: true,
+      jsonDocumentUrl: '/openapi.json',
     });
   }
+
   return app;
 }
