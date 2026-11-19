@@ -3,11 +3,11 @@ import { eq } from 'drizzle-orm';
 import { DatabaseService } from '../../database/database.module.js';
 import { telegramUsers } from '../../database/schema.js';
 
-export type TelegramUserIdentity = { id: string };
+export type UserIdentity = { id: string };
 
-/** Хранилище пользователей Telegram. Без DATABASE_URL работает без БД. */
+/** Хранилище пользователей. Без DATABASE_URL работает без БД. */
 @Injectable()
-export class TelegramUsersService {
+export class UsersService {
   constructor(private readonly database: DatabaseService) {}
 
   async ensure(id: string): Promise<void> {
@@ -17,7 +17,7 @@ export class TelegramUsersService {
       .onConflictDoNothing();
   }
 
-  async find(id: string): Promise<TelegramUserIdentity | null> {
+  async find(id: string): Promise<UserIdentity | null> {
     if (!this.database.db) return { id };
     const [user] = await this.database.db
       .select({ id: telegramUsers.id })

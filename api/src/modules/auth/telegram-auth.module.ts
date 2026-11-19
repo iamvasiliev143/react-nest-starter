@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
-import { DatabaseModule } from '../../database/database.module.js';
+import { UsersModule } from '../users/users.module.js';
 import { TelegramAuthController } from './telegram-auth.controller.js';
 import { TelegramBearer } from './telegram-bearer.provider.js';
-import { TelegramUsersService } from './telegram-users.service.js';
+import { TelegramSignInEnabledInterceptor } from './telegram-sign-in-enabled.interceptor.js';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [UsersModule],
   controllers: [TelegramAuthController],
-  providers: [TelegramBearer, TelegramUsersService],
+  providers: [TelegramBearer, TelegramSignInEnabledInterceptor],
 })
 export class TelegramAuthModule {}

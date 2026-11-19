@@ -1,8 +1,7 @@
 import { Injectable, Module, type OnApplicationShutdown } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import type { Environment } from '../environment.js';
+import { AppConfig } from '../common/config/app-config.js';
 import * as schema from './schema.js';
 
 @Injectable()
@@ -10,7 +9,7 @@ export class DatabaseService implements OnApplicationShutdown {
   private readonly pool?: Pool;
   readonly db?: ReturnType<typeof drizzle<typeof schema>>;
 
-  constructor(config: ConfigService<Environment, true>) {
+  constructor(config: AppConfig) {
     const connectionString = config.get('DATABASE_URL', { infer: true });
     if (connectionString) {
       this.pool = new Pool({

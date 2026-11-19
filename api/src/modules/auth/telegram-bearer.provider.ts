@@ -1,22 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import {
   AuthenticationRegistry,
   JwtBearerProvider,
   type JwtClaims,
 } from '@nestjs/authentication';
-import type { Environment } from '../../environment.js';
-import {
-  TelegramUsersService,
-  type TelegramUserIdentity,
-} from './telegram-users.service.js';
+import { AppConfig } from '../../common/config/app-config.js';
+import { UsersService, type UserIdentity } from '../users/users.service.js';
 
 @Injectable()
-export class TelegramBearer extends JwtBearerProvider<TelegramUserIdentity> {
+export class TelegramBearer extends JwtBearerProvider<UserIdentity> {
   constructor(
-    config: ConfigService<Environment, true>,
+    config: AppConfig,
     registry: AuthenticationRegistry,
-    private readonly users: TelegramUsersService,
+    private readonly users: UsersService,
   ) {
     super({ realm: 'telegram-mini-app' });
     if (config.get('AUTH_TOKEN_SECRET', { infer: true }))

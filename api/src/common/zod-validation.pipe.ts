@@ -1,0 +1,22 @@
+import { BadRequestException, type PipeTransform } from '@nestjs/common';
+import type { z } from 'zod';
+
+/**
+ * Проверяет входное значение по Zod-схеме и возвращает разобранные данные.
+ * По умолчанию отвечает 400; фича может задать свою ошибку.
+ */
+export class ZodValidationPipe<
+  Schema extends z.ZodType,
+> implements PipeTransform<unknown, z.output<Schema>> {
+  constructor(
+    private readonly schema: Schema,
+    private readonly createError: () => Error = () =>
+      new BadRequestException('Invalid request'),
+  ) {}
+
+  transform(value: unknown): z.output<Schema> {
+    const result = this.schema.safeParse(value);
+    if (!result.success) throw this.createError();
+    return result.data;
+  }
+}

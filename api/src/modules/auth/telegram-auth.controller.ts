@@ -5,30 +5,34 @@ import {
   Header,
   HttpCode,
   Post,
-  ServiceUnavailableException,
   UnauthorizedException,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { CurrentUser, Public, TokenService } from '@nestjs/authentication';
 import { Can } from '@nestjs/authorization';
 import { ApiBearerAuth, ApiBody, ApiOkResponse } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import type { Environment } from '../../environment.js';
-import { telegramExchangeSchema } from './dto/telegram-exchange.request.dto.js';
+import { AppConfig } from '../../common/config/app-config.js';
+import { ZodValidationPipe } from '../../common/zod-validation.pipe.js';
+import { UsersService, type UserIdentity } from '../users/users.service.js';
+import {
+  telegramExchangeSchema,
+  type TelegramExchangeRequest,
+} from './dto/telegram-exchange.request.dto.js';
 import { TelegramToken } from './dto/telegram-token.response.dto.js';
 import { TelegramUser } from './dto/telegram-user.response.dto.js';
+import { TelegramSignInEnabledInterceptor } from './telegram-sign-in-enabled.interceptor.js';
 import { verifyTelegramInitData } from './telegram-init-data.js';
-import {
-  TelegramUsersService,
-  type TelegramUserIdentity,
-} from './telegram-users.service.js';
+
+const invalidCredentials = () =>
+  new UnauthorizedException('Invalid Telegram credentials');
 
 @Controller('auth')
 export class TelegramAuthController {
   constructor(
-    private readonly config: ConfigService<Environment, true>,
+    private readonly config: AppConfig,
     private readonly tokens: TokenService,
-    private readonly users: TelegramUsersService,
+    private readonly users: UsersService,
   ) {}
 
   @Public()
@@ -36,6 +40,7 @@ export class TelegramAuthController {
   @HttpCode(200)
   @Header('Cache-Control', 'no-store')
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @UseInterceptors(TelegramSignInEnabledInterceptor)
   @ApiBody({
     schema: {
       type: 'object',
@@ -44,15 +49,15 @@ export class TelegramAuthController {
     },
   })
   @ApiOkResponse({ type: TelegramToken })
-  async exchange(@Body() body: unknown): Promise<TelegramToken> {
+  async exchange(
+    @Body(new ZodValidationPipe(telegramExchangeSchema, invalidCredentials))
+    body: TelegramExchangeRequest,
+  ): Promise<TelegramToken> {
     const botToken = this.config.get('TELEGRAM_BOT_TOKEN', { infer: true });
-    if (!botToken)
-      throw new ServiceUnavailableException('Telegram sign-in is disabled');
-    const parsed = telegramExchangeSchema.safeParse(body);
-    const id = parsed.success
-      ? verifyTelegramInitData(parsed.data.initData, botToken)
+    const id = botToken
+      ? verifyTelegramInitData(body.initData, botToken)
       : null;
-    if (!id) throw new UnauthorizedException('Invalid Telegram credentials');
+    if (!id) throw invalidCredentials();
     await this.users.ensure(id);
     const { accessToken, expiresIn } = await this.tokens.issue(id, {
       method: 'telegram',
@@ -65,7 +70,7 @@ export class TelegramAuthController {
   @Header('Cache-Control', 'no-store')
   @ApiBearerAuth()
   @ApiOkResponse({ type: TelegramUser })
-  me(@CurrentUser() user: TelegramUserIdentity): TelegramUser {
+  me(@CurrentUser() user: UserIdentity): TelegramUser {
     return user;
   }
 }
