@@ -15,6 +15,10 @@ const schema = z
       (value) => (value === '' ? undefined : value),
       z.url({ protocol: /^postgres(?:ql)?$/ }).optional(),
     ),
+    REDIS_URL: z.preprocess(
+      (value) => (value === '' ? undefined : value),
+      z.url({ protocol: /^rediss?$/ }).optional(),
+    ),
     STORAGE_PATH: z.string().min(1).default('.storage'),
     OBSERVE_APP_KEY: optionalText,
     OBSERVE_APP_SECRET: optionalText,

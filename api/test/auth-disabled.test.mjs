@@ -10,6 +10,7 @@ test('Telegram sign-in answers 503 before body validation when disabled', async 
   const storagePath = await mkdtemp(join(tmpdir(), 'starter-storage-'));
   process.env.NODE_ENV = 'test';
   process.env.DATABASE_URL = '';
+  process.env.REDIS_URL = '';
   process.env.STORAGE_PATH = storagePath;
   process.env.TELEGRAM_BOT_TOKEN = '';
   process.env.AUTH_TOKEN_SECRET = '';

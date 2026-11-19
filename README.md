@@ -16,7 +16,7 @@ npm run dev
 ## Структура API
 
 - `api/src/modules/` содержит фичи NestJS. Модуль владеет своими контроллерами, сервисами, DTO и внутренними типами.
-- `api/src/database/` содержит сервис подключения к PostgreSQL и схему Drizzle. Миграции лежат в `api/drizzle/`.
+- `api/src/database/` содержит сервисы подключения к PostgreSQL и Redis, а также схему Drizzle. Миграции лежат в `api/drizzle/`.
 - `api/src/common/` содержит общую инфраструктуру, включая инструментацию Observe.
 
 Для правил размещения контрактов и зависимостей между фичами смотри [nestjs-practices](.claude/skills/nestjs-practices/SKILL.md).
@@ -46,7 +46,7 @@ npm run dev
 ## Интеграции
 
 - [Notion](docs/notion.md) хранит задачи, проектную документацию, решения и отчётность. Настройку доступа смотри в разделе [Подключение MCP](docs/integrations.md#notion-mcp).
-- [Telegram Mini App, PostgreSQL, Observe и OpenAPI](docs/integrations.md) описаны в руководстве по интеграциям.
+- [Telegram Mini App, PostgreSQL, Redis, Observe и OpenAPI](docs/integrations.md) описаны в руководстве по интеграциям.
 
 ## Деплой
 

@@ -26,6 +26,7 @@ test('NodeAdapter, localization, storage and Telegram bearer auth are wired', as
   const botToken = '123456:fixture-token';
   process.env.NODE_ENV = 'test';
   process.env.DATABASE_URL = '';
+  process.env.REDIS_URL = '';
   process.env.STORAGE_PATH = storagePath;
   process.env.TELEGRAM_BOT_TOKEN = botToken;
   process.env.AUTH_TOKEN_SECRET = 'example-secret-only-used-in-tests-123';
@@ -37,6 +38,7 @@ test('NodeAdapter, localization, storage and Telegram bearer auth are wired', as
     const { createApp } = await import('../dist/create-app.js');
     const { DatabaseService } =
       await import('../dist/database/database.module.js');
+    const { RedisService } = await import('../dist/database/redis.module.js');
     app = await createApp();
     assert.equal(app.getHttpAdapter().getType(), 'node');
     await app.listen(0, '127.0.0.1');
@@ -105,6 +107,26 @@ test('NodeAdapter, localization, storage and Telegram bearer auth are wired', as
         assert.equal(check.mock.callCount(), 2);
       },
     );
+
+    await t.test('readiness reports configured Redis', async (t) => {
+      const redis = app.get(RedisService);
+      t.mock.getter(redis, 'isConfigured', () => true);
+      let redisReady = true;
+      t.mock.method(redis, 'isReady', async () => redisReady);
+
+      const ready = await fetch(base + '/api/health/ready');
+      assert.equal(ready.status, 200);
+      assert.deepEqual((await ready.json()).details, {
+        redis: { status: 'up' },
+      });
+
+      redisReady = false;
+      const unavailable = await fetch(base + '/api/health/ready');
+      assert.equal(unavailable.status, 503);
+      assert.deepEqual((await unavailable.json()).error, {
+        redis: { status: 'down' },
+      });
+    });
 
     await t.test('storage round trip, OpenAPI and Swagger UI', async () => {
       const disk = app.get(Storage).disk();

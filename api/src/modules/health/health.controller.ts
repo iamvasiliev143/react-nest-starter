@@ -8,6 +8,7 @@ import {
 } from '@nestjs/terminus';
 import { SkipThrottle } from '@nestjs/throttler';
 import { DatabaseService } from '../../database/database.module.js';
+import { RedisService } from '../../database/redis.module.js';
 import { HealthStatus } from './health.dto.js';
 
 @Public()
@@ -17,6 +18,7 @@ import { HealthStatus } from './health.dto.js';
 export class HealthController {
   constructor(
     private readonly database: DatabaseService,
+    private readonly redis: RedisService,
     private readonly healthCheck: HealthCheckService,
     private readonly healthIndicator: HealthIndicatorService,
   ) {}
@@ -36,13 +38,16 @@ export class HealthController {
   })
   @HealthCheck()
   readiness() {
-    return this.healthCheck.check(
-      this.database.isConfigured ? [() => this.checkPostgres()] : [],
-    );
+    const checks = [];
+    if (this.database.isConfigured)
+      checks.push(() => this.check('postgres', this.database.isReady()));
+    if (this.redis.isConfigured)
+      checks.push(() => this.check('redis', this.redis.isReady()));
+    return this.healthCheck.check(checks);
   }
 
-  private async checkPostgres() {
-    const indicator = this.healthIndicator.check('postgres');
-    return (await this.database.isReady()) ? indicator.up() : indicator.down();
+  private async check(key: string, ready: Promise<boolean>) {
+    const indicator = this.healthIndicator.check(key);
+    return (await ready) ? indicator.up() : indicator.down();
   }
 }
