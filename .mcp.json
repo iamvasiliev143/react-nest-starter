@@ -3,6 +3,40 @@
     "notion": {
       "type": "http",
       "url": "https://mcp.notion.com/mcp"
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      }
+    },
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "playwright": {
+      "command": "node",
+      "args": [
+        "node_modules/@playwright/mcp/cli.js",
+        "--headless",
+        "--isolated",
+        "--output-dir",
+        "test-results/mcp"
+      ]
+    },
+    "postgres": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "--add-host=host.docker.internal:host-gateway",
+        "-e",
+        "DATABASE_URI=postgresql://starter:starter-local@host.docker.internal:5434/starter",
+        "crystaldba/postgres-mcp:0.3.0",
+        "--access-mode=restricted"
+      ]
     }
   }
 }

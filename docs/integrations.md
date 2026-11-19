@@ -22,6 +22,19 @@ codex -c 'mcp_servers.notion.url="https://mcp.notion.com/mcp"' mcp login notion
 
 [Когда читать и обновлять Notion](notion.md) · [Notion MCP](https://developers.notion.com/guides/mcp/get-started-with-mcp) · [Claude Code MCP](https://code.claude.com/docs/en/mcp) · [Codex MCP](https://developers.openai.com/codex/mcp)
 
+## Другие MCP-серверы
+
+`.mcp.json` подключает ещё четыре сервера. При первом запуске Claude Code попросит подтвердить каждый в `/mcp`.
+
+| Сервер       | Зачем                                                                | Что нужно                                                                                                                                                                                |
+| ------------ | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `github`     | PR, статус CI, ревью-комментарии                                     | Fine-grained token с доступом к репозиторию в переменной окружения `GITHUB_PERSONAL_ACCESS_TOKEN`. Токен не попадает в Git.                                                              |
+| `context7`   | Документация библиотек под установленные версии (Nest, Drizzle, Zod) | Ничего. Без ключа действует общий лимит запросов.                                                                                                                                        |
+| `playwright` | Headless-браузер для проверки `web/` против локального API           | `npm install` в корне; сервер закреплён в `devDependencies`. Артефакты пишутся в `test-results/mcp/`.                                                                                    |
+| `postgres`   | Чтение схемы и данных локальной БД, `EXPLAIN`, проверка индексов     | Docker и запущенный `docker compose up -d --wait postgres`. Образ `crystaldba/postgres-mcp:0.3.0` работает в режиме `restricted` (только чтение) и подключается только к локальной базе. |
+
+Сервер `postgres` не подключай к staging или production: у проекта `crystaldba/postgres-mcp` нет релизов с мая 2025 года.
+
 ## PostgreSQL и файлы
 
 Для локальной БД запусти `docker compose up -d --wait postgres` и укажи в `api/.env`:
