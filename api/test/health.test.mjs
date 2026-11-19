@@ -1,8 +1,5 @@
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
-import { mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import test from 'node:test';
 import { Storage } from '@nestjs/storage';
 import { sign } from '@tma.js/init-data-node';
@@ -23,13 +20,9 @@ function signWithDuplicates(entries, botToken) {
 }
 
 test('NodeAdapter, localization, storage and Telegram bearer auth are wired', async (t) => {
-  const storagePath = await mkdtemp(join(tmpdir(), 'starter-storage-'));
   const botToken = '123456:fixture-token';
   process.env.NODE_ENV = 'test';
-  const { databaseUrl, redisUrl } = await prepareTestServices();
-  process.env.DATABASE_URL = databaseUrl;
-  process.env.REDIS_URL = redisUrl;
-  process.env.STORAGE_PATH = storagePath;
+  Object.assign(process.env, await prepareTestServices());
   process.env.TELEGRAM_BOT_TOKEN = botToken;
   process.env.AUTH_TOKEN_SECRET = 'example-secret-only-used-in-tests-123';
   process.env.OBSERVE_APP_KEY = '';
@@ -59,20 +52,21 @@ test('NodeAdapter, localization, storage and Telegram bearer auth are wired', as
       assert.deepEqual(await greeting.json(), { message: 'Привет' });
     });
 
-    const bothUp = {
+    const allUp = {
       postgres: { status: 'up' },
       redis: { status: 'up' },
+      s3: { status: 'up' },
     };
 
-    await t.test('readiness checks PostgreSQL and Redis', async () => {
+    await t.test('readiness checks PostgreSQL, Redis and S3', async () => {
       const response = await fetch(base + '/api/health/ready');
       assert.equal(response.status, 200);
       assert.match(response.headers.get('cache-control'), /no-store/);
       assert.deepEqual(await response.json(), {
         status: 'ok',
-        info: bothUp,
+        info: allUp,
         error: {},
-        details: bothUp,
+        details: allUp,
       });
     });
 
@@ -88,9 +82,9 @@ test('NodeAdapter, localization, storage and Telegram bearer auth are wired', as
         assert.equal(unavailable.status, 503);
         assert.deepEqual(await unavailable.json(), {
           status: 'error',
-          info: { redis: { status: 'up' } },
+          info: { redis: { status: 'up' }, s3: { status: 'up' } },
           error: { postgres: { status: 'down' } },
-          details: { postgres: { status: 'down' }, redis: { status: 'up' } },
+          details: { ...allUp, postgres: { status: 'down' } },
         });
         const alive = await fetch(base + '/api/health');
         assert.equal(alive.status, 200);
@@ -112,10 +106,25 @@ test('NodeAdapter, localization, storage and Telegram bearer auth are wired', as
       });
     });
 
-    await t.test('storage round trip, OpenAPI and Swagger UI', async () => {
+    await t.test('readiness reports S3 down', async (t) => {
+      t.mock.method(app.get(Storage).disk(), 'list', async () => {
+        throw new Error('connection refused');
+      });
+
+      const unavailable = await fetch(base + '/api/health/ready');
+      assert.equal(unavailable.status, 503);
+      assert.deepEqual((await unavailable.json()).error, {
+        s3: { status: 'down' },
+      });
+    });
+
+    await t.test('S3 round trip, OpenAPI and Swagger UI', async () => {
       const disk = app.get(Storage).disk();
-      await disk.put('fixture.txt', Buffer.from('local'));
-      assert.equal(await disk.getText('fixture.txt'), 'local');
+      const key = `fixtures/${Date.now()}-${process.pid}.txt`;
+      await disk.put(key, Buffer.from('s3'));
+      assert.equal(await disk.getText(key), 's3');
+      await disk.delete(key);
+      assert.equal(await disk.exists(key), false);
       const spec = await fetch(base + '/api/openapi.json');
       assert.equal(spec.status, 200);
       assert.ok((await spec.json()).paths['/api/auth/telegram']);
@@ -181,6 +190,5 @@ test('NodeAdapter, localization, storage and Telegram bearer auth are wired', as
     });
   } finally {
     await app?.close();
-    await rm(storagePath, { recursive: true, force: true });
   }
 });

@@ -6,6 +6,7 @@ import { SkipThrottle } from '@nestjs/throttler';
 import { HealthStatus } from './dto/health-status.response.dto.js';
 import { PostgresHealthIndicator } from './indicators/postgres.health-indicator.js';
 import { RedisHealthIndicator } from './indicators/redis.health-indicator.js';
+import { S3HealthIndicator } from './indicators/s3.health-indicator.js';
 
 @Public()
 @ApiTags('Status')
@@ -16,6 +17,7 @@ export class HealthController {
     private readonly healthCheck: HealthCheckService,
     private readonly postgres: PostgresHealthIndicator,
     private readonly redis: RedisHealthIndicator,
+    private readonly s3: S3HealthIndicator,
   ) {}
 
   @Get()
@@ -36,6 +38,7 @@ export class HealthController {
     return this.healthCheck.check([
       () => this.postgres.check('postgres'),
       () => this.redis.check('redis'),
+      () => this.s3.check('s3'),
     ]);
   }
 }

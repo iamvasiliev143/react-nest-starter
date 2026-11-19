@@ -26,5 +26,44 @@ services:
       timeout: 3s
       retries: 10
 
+  # S3-совместимое хранилище файлов. Консоль: http://127.0.0.1:9011
+  s3:
+    image: rustfs/rustfs:1.0.6
+    environment:
+      RUSTFS_ACCESS_KEY: starter
+      RUSTFS_SECRET_KEY: starter-local-secret
+      RUSTFS_ADDRESS: 0.0.0.0:9000
+      RUSTFS_CONSOLE_ENABLE: 'true'
+      RUSTFS_CONSOLE_ADDRESS: 0.0.0.0:9001
+    ports:
+      - '127.0.0.1:9010:9000'
+      - '127.0.0.1:9011:9001'
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://127.0.0.1:9000/health/ready']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - starter-s3:/data
+
+  # Создаёт бакеты для разработки и тестов и завершается.
+  s3-buckets:
+    image: amazon/aws-cli:2.41.1
+    depends_on:
+      s3:
+        condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID: starter
+      AWS_SECRET_ACCESS_KEY: starter-local-secret
+      AWS_DEFAULT_REGION: us-east-1
+    entrypoint: ['sh', '-c']
+    command:
+      - >-
+        for bucket in starter starter-test; do
+        aws --endpoint-url http://s3:9000 s3api head-bucket --bucket $$bucket 2>/dev/null ||
+        aws --endpoint-url http://s3:9000 s3api create-bucket --bucket $$bucket || exit 1;
+        done
+
 volumes:
   starter-postgres:
+  starter-s3:

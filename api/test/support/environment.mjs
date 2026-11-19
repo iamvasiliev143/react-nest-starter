@@ -9,6 +9,15 @@ const DATABASE_URL =
   process.env.DATABASE_URL ||
   'postgresql://starter:starter-local@127.0.0.1:5434/starter';
 const REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6380';
+const S3 = {
+  S3_ENDPOINT: process.env.S3_ENDPOINT || 'http://127.0.0.1:9010',
+  S3_REGION: process.env.S3_REGION || 'us-east-1',
+  // Бакет создаёт сервис s3-buckets из docker-compose.yml (в CI — шаг workflow).
+  S3_BUCKET: 'starter-test',
+  S3_ACCESS_KEY_ID: process.env.S3_ACCESS_KEY_ID || 'starter',
+  S3_SECRET_ACCESS_KEY:
+    process.env.S3_SECRET_ACCESS_KEY || 'starter-local-secret',
+};
 
 const TEST_DATABASE = 'starter_test';
 const TEST_REDIS_DB = 1;
@@ -20,8 +29,9 @@ const MIGRATIONS = fileURLToPath(
 const LOCK_ID = 7_310_001;
 
 /**
- * Готовит изолированные базы для тестов: `starter_test` в PostgreSQL с
- * применёнными миграциями и чистую базу Redis №1. Возвращает их адреса.
+ * Готовит изолированные хранилища для тестов: `starter_test` в PostgreSQL с
+ * применёнными миграциями, чистую базу Redis №1 и бакет `starter-test`.
+ * Возвращает переменные окружения API.
  */
 export async function prepareTestServices() {
   const admin = new pg.Client({ connectionString: DATABASE_URL });
@@ -52,7 +62,11 @@ export async function prepareTestServices() {
       redis.disconnect();
     }
 
-    return { databaseUrl: url.href, redisUrl: redisUrl.href };
+    return {
+      DATABASE_URL: url.href,
+      REDIS_URL: redisUrl.href,
+      ...S3,
+    };
   } finally {
     await admin.query('select pg_advisory_unlock($1)', [LOCK_ID]);
     await admin.end();
