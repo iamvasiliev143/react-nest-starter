@@ -1,0 +1,169 @@
+name: Check
+
+on:
+  push:
+    branches: [main, develop, staging, 'release/**']
+    tags: ['v*']
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, edited]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    # API всегда работает с PostgreSQL, Redis и S3: те же образы и порты, что в docker-compose.yml.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: starter
+          POSTGRES_PASSWORD: starter-local
+          POSTGRES_DB: starter
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd "pg_isready -U starter -d starter"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6380:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      s3:
+        image: rustfs/rustfs:1.0.6
+        env:
+          RUSTFS_ACCESS_KEY: starter
+          RUSTFS_SECRET_KEY: starter-local-secret
+          RUSTFS_ADDRESS: 0.0.0.0:9000
+        ports:
+          - 9010:9000
+        options: >-
+          --health-cmd "curl -fsS http://127.0.0.1:9000/health/ready"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://starter:starter-local@127.0.0.1:5434/starter
+      REDIS_URL: redis://127.0.0.1:6380
+      S3_ENDPOINT: http://127.0.0.1:9010
+      S3_REGION: us-east-1
+      S3_BUCKET: starter
+      S3_ACCESS_KEY_ID: starter
+      S3_SECRET_ACCESS_KEY: starter-local-secret
+    steps:
+      - name: Check pull request route
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          BASE_REPO_ID: ${{ github.event.pull_request.base.repo.id }}
+          HEAD_REPO_ID: ${{ github.event.pull_request.head.repo.id }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          task_branch='^(feat|fix|chore|docs)/.+$'
+          release_branch='^release/(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
+
+          if [[ "$BASE_REF" == develop && "$HEAD_REF" =~ $task_branch ]]; then
+            exit 0
+          fi
+
+          if [[ -n "$BASE_REPO_ID" && "$BASE_REPO_ID" == "$HEAD_REPO_ID" ]]; then
+            case "$BASE_REF" in
+              develop)
+                if [[ "$HEAD_REF" == main || "$HEAD_REF" =~ $release_branch ]]; then exit 0; fi
+                if [[ "$PR_AUTHOR" == 'dependabot[bot]' && "$HEAD_REF" == dependabot/?* ]]; then exit 0; fi
+                ;;
+              staging)
+                if [[ "$HEAD_REF" =~ $release_branch ]]; then exit 0; fi
+                ;;
+              main)
+                if [[ "$HEAD_REF" == staging || "$HEAD_REF" == hotfix/?* ]]; then exit 0; fi
+                ;;
+              *)
+                if [[ "$BASE_REF" =~ $release_branch && ( "$HEAD_REF" == main || "$HEAD_REF" == fix/?* ) ]]; then exit 0; fi
+                ;;
+            esac
+          fi
+
+          printf 'Pull request route is not allowed: %s -> %s. See docs/git-workflow.md.\n' "$HEAD_REF" "$BASE_REF" >&2
+          exit 1
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check pull request diff
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: git diff --check "$BASE_SHA...$HEAD_SHA" --
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+        env:
+          LEFTHOOK: '0'
+      - name: Check pull request commit messages
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: npm exec -- commitlint --from "$BASE_SHA" --to "$HEAD_SHA" --verbose
+      - name: Check squash commit title
+        if: >-
+          github.event_name == 'pull_request' &&
+          !github.event.pull_request.draft &&
+          (startsWith(github.event.pull_request.head.ref, 'feat/') ||
+          startsWith(github.event.pull_request.head.ref, 'fix/') ||
+          startsWith(github.event.pull_request.head.ref, 'chore/') ||
+          startsWith(github.event.pull_request.head.ref, 'docs/') ||
+          startsWith(github.event.pull_request.head.ref, 'dependabot/'))
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: printf '%s\n' "$PR_TITLE" | npm exec -- commitlint --verbose
+      - name: Create S3 buckets
+        env:
+          AWS_ACCESS_KEY_ID: starter
+          AWS_SECRET_ACCESS_KEY: starter-local-secret
+          AWS_DEFAULT_REGION: us-east-1
+        run: |
+          for bucket in starter starter-test; do
+            aws --endpoint-url "$S3_ENDPOINT" s3api create-bucket --bucket "$bucket"
+          done
+      - name: Check generated OpenAPI and client types
+        run: |
+          git ls-files --error-unmatch -- api/openapi.json web/src/api-schema.d.ts
+          npm run api:types
+          git diff --exit-code HEAD -- api/openapi.json web/src/api-schema.d.ts
+      - run: npm run check
+      - run: npm exec -w web -- playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - name: Package tested staging build
+        if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          bundle="$(mktemp -d "$RUNNER_TEMP/release-$GITHUB_SHA.XXXXXX")"
+          mkdir -p "$bundle/api/scripts" "$bundle/api/src/database/postgres" "$bundle/web"
+          cp package.json package-lock.json "$bundle/"
+          cp api/package.json "$bundle/api/"
+          cp api/scripts/migrate.mjs "$bundle/api/scripts/"
+          cp -R api/dist "$bundle/api/"
+          cp -R api/src/database/postgres/migrations "$bundle/api/src/database/postgres/"
+          cp web/package.json "$bundle/web/"
+          cp -R web/dist "$bundle/web/"
+          printf '{"sha":"%s","tree":"%s","nodeVersion":"%s"}\n' \
+            "$GITHUB_SHA" "$(git rev-parse 'HEAD^{tree}')" "$(node --version)" > "$bundle/release.json"
+          tar -czf "$RUNNER_TEMP/release-$GITHUB_SHA.tar.gz" -C "$bundle" .
+      - name: Upload tested staging build
+        if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-${{ github.sha }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/release-${{ github.sha }}.tar.gz
+          if-no-files-found: error
+          compression-level: 0

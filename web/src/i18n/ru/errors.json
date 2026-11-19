@@ -1,0 +1,17 @@
+{
+  "signInRequired": "Войди через Telegram, чтобы продолжить",
+  "apiUnavailable": "API недоступен",
+  "invalidTelegramData": "Не удалось подтвердить данные. Открой Mini App заново из Telegram.",
+  "signInFailed": "Вход через Telegram не удался. Попробуй ещё раз.",
+  "profileLoadFailed": "Не удалось загрузить профиль",
+  "invalidSession": "Сервер вернул некорректную сессию",
+  "notFound": "Страница не найдена.",
+  "recoveryTitle": "Не удалось загрузить приложение",
+  "recoveryDescription": "Перезагрузи приложение, чтобы попробовать снова.",
+  "reload": "Перезагрузить",
+  "invalidRequest": "Проверь введённые данные",
+  "forbidden": "Доступ запрещён",
+  "rateLimited": "Слишком много запросов. Попробуй позже.",
+  "serverError": "Сервер не смог выполнить запрос",
+  "unknownError": "Не удалось выполнить запрос"
+}

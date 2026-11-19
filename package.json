@@ -1,0 +1,56 @@
+{
+  "name": "react-nest-starter",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "web",
+    "api"
+  ],
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "concurrently --kill-others --names api,web \"npm run dev -w api\" \"npm run dev -w web\"",
+    "typecheck": "npm run typecheck --workspaces",
+    "test": "node --test scripts/setup.test.mjs scripts/claude.test.mjs && npm test --workspaces",
+    "build": "npm run build --workspaces",
+    "check": "npm run lint && npm run format:check && npm run typecheck && npm test && npm run build",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "hooks:install": "lefthook install",
+    "graph:update": "engram update . --no-description --no-label",
+    "graph:summary": "engram summary --graph .engram/graph.json",
+    "graph:query": "engram query --graph .engram/graph.json",
+    "api:types": "npm run openapi -w api && npm run api:types -w web",
+    "db:migrate": "npm run db:migrate -w api",
+    "test:e2e": "npm run test:e2e -w web",
+    "setup": "node scripts/setup.mjs",
+    "ai:claude": "node scripts/claude.mjs",
+    "ai:claude:exec": "claude"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
+    "@eslint/js": "^10.0.1",
+    "@playwright/mcp": "0.0.86",
+    "@sentropic/engram": "0.28.0",
+    "concurrently": "^10.0.7",
+    "eslint": "^10.15.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.8",
+    "globals": "^17.14.0",
+    "lefthook": "^2.2.2",
+    "prettier": "^3.10.1",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.73.0"
+  },
+  "overrides": {
+    "@esbuild-kit/core-utils": {
+      "esbuild": "^0.25.12"
+    },
+    "officeparser": {
+      "pdfjs-dist": "^6.5.438"
+    }
+  }
+}
