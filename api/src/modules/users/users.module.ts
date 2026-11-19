@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { DatabaseModule } from '../../database/database.module.js';
+import { PostgresModule } from '../../database/postgres/postgres.module.js';
 import { UsersService } from './users.service.js';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [PostgresModule],
   providers: [UsersService],
   exports: [UsersService],
 })

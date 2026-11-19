@@ -15,8 +15,8 @@ npm run dev
 
 ## Структура API
 
-- `api/src/modules/` содержит фичи NestJS. Модуль владеет своими контроллерами, сервисами, DTO и внутренними типами.
-- `api/src/database/` содержит сервисы подключения к PostgreSQL и Redis, а также схему Drizzle. Миграции лежат в `api/drizzle/`.
+- `api/src/modules/` содержит фичи NestJS. Модуль владеет своими контроллерами, сервисами, DTO (`dto/`) и внутренними типами (`interfaces/`). Индикаторы readiness лежат в `modules/health/indicators/`.
+- `api/src/database/` содержит по папке на хранилище: `postgres/` (сервис подключения и схема Drizzle) и `redis/`. Миграции лежат в `api/drizzle/`.
 - `api/src/common/` содержит общую инфраструктуру, включая инструментацию Observe.
 
 Для правил размещения контрактов и зависимостей между фичами смотри [nestjs-practices](.claude/skills/nestjs-practices/SKILL.md).

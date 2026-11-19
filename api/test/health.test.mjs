@@ -36,9 +36,10 @@ test('NodeAdapter, localization, storage and Telegram bearer auth are wired', as
 
   try {
     const { createApp } = await import('../dist/create-app.js');
-    const { DatabaseService } =
-      await import('../dist/database/database.module.js');
-    const { RedisService } = await import('../dist/database/redis.module.js');
+    const { PostgresService } =
+      await import('../dist/database/postgres/postgres.service.js');
+    const { RedisService } =
+      await import('../dist/database/redis/redis.service.js');
     app = await createApp();
     assert.equal(app.getHttpAdapter().getType(), 'node');
     await app.listen(0, '127.0.0.1');
@@ -74,14 +75,14 @@ test('NodeAdapter, localization, storage and Telegram bearer auth are wired', as
     await t.test(
       'readiness reports configured PostgreSQL and liveness stays up when it fails',
       async (t) => {
-        const database = app.get(DatabaseService);
-        t.mock.getter(database, 'isConfigured', () => true);
+        const postgres = app.get(PostgresService);
+        t.mock.getter(postgres, 'isConfigured', () => true);
         let databaseReady = true;
-        const check = t.mock.method(
-          database,
-          'isReady',
-          async () => databaseReady,
-        );
+        const execute = t.mock.fn(async () => {
+          if (!databaseReady) throw new Error('connection refused');
+        });
+        postgres.db = { execute };
+        t.after(() => (postgres.db = undefined));
 
         const ready = await fetch(base + '/api/health/ready');
         assert.equal(ready.status, 200);
@@ -104,7 +105,7 @@ test('NodeAdapter, localization, storage and Telegram bearer auth are wired', as
         const alive = await fetch(base + '/api/health');
         assert.equal(alive.status, 200);
         assert.deepEqual(await alive.json(), { status: 'ok' });
-        assert.equal(check.mock.callCount(), 2);
+        assert.equal(execute.mock.callCount(), 2);
       },
     );
 
@@ -112,7 +113,13 @@ test('NodeAdapter, localization, storage and Telegram bearer auth are wired', as
       const redis = app.get(RedisService);
       t.mock.getter(redis, 'isConfigured', () => true);
       let redisReady = true;
-      t.mock.method(redis, 'isReady', async () => redisReady);
+      redis.client = {
+        ping: async () => {
+          if (!redisReady) throw new Error('connection refused');
+          return 'PONG';
+        },
+      };
+      t.after(() => (redis.client = undefined));
 
       const ready = await fetch(base + '/api/health/ready');
       assert.equal(ready.status, 200);

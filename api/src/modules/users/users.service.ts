@@ -1,24 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
-import { DatabaseService } from '../../database/database.module.js';
-import { users } from '../../database/schema.js';
-export type UserIdentity = { id: string };
-
-export type UserProfile = UserIdentity & {
-  firstName: string | null;
-  lastName: string | null;
-  username: string | null;
-  languageCode: string | null;
-};
+import { PostgresService } from '../../database/postgres/postgres.service.js';
+import { users } from '../../database/postgres/schema.js';
+import type { UserIdentity, UserProfile } from './interfaces/user.interface.js';
 
 /** Хранилище пользователей. Без DATABASE_URL работает без БД. */
 @Injectable()
 export class UsersService {
-  constructor(private readonly database: DatabaseService) {}
+  constructor(private readonly postgres: PostgresService) {}
 
   async upsert(profile: UserProfile): Promise<void> {
     const { id, ...fields } = profile;
-    await this.database.db
+    await this.postgres.db
       ?.insert(users)
       .values({ id, ...fields })
       .onConflictDoUpdate({
@@ -32,8 +25,8 @@ export class UsersService {
   }
 
   async find(id: string): Promise<UserIdentity | null> {
-    if (!this.database.db) return { id };
-    const [user] = await this.database.db
+    if (!this.postgres.db) return { id };
+    const [user] = await this.postgres.db
       .select({ id: users.id })
       .from(users)
       .where(eq(users.id, id))

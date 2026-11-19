@@ -2,7 +2,7 @@ import { Controller, Get } from '@nestjs/common';
 import { Public } from '@nestjs/authentication';
 import { I18nService } from '@nestjs/i18n';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Greeting } from './greeting.dto.js';
+import { Greeting } from './dto/greeting.response.dto.js';
 
 @Public()
 @ApiTags('Status')

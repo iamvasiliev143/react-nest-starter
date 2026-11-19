@@ -1,6 +1,6 @@
-import { Injectable, Module, type OnApplicationShutdown } from '@nestjs/common';
+import { Injectable, type OnApplicationShutdown } from '@nestjs/common';
 import { Redis } from 'ioredis';
-import { AppConfig } from '../common/config/app-config.js';
+import { AppConfig } from '../../common/config/app-config.js';
 
 const TIMEOUT_MS = 3000;
 
@@ -28,19 +28,7 @@ export class RedisService implements OnApplicationShutdown {
     return this.client !== undefined;
   }
 
-  async isReady(): Promise<boolean> {
-    if (!this.client) return true;
-    try {
-      return (await this.client.ping()) === 'PONG';
-    } catch {
-      return false;
-    }
-  }
-
   async onApplicationShutdown() {
     this.client?.disconnect();
   }
 }
-
-@Module({ providers: [RedisService], exports: [RedisService] })
-export class RedisModule {}

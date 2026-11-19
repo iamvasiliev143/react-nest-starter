@@ -14,7 +14,8 @@ import { ApiBearerAuth, ApiBody, ApiOkResponse } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { AppConfig } from '../../common/config/app-config.js';
 import { ZodValidationPipe } from '../../common/zod-validation.pipe.js';
-import { UsersService, type UserIdentity } from '../users/users.service.js';
+import type { UserIdentity } from '../users/interfaces/user.interface.js';
+import { UsersService } from '../users/users.service.js';
 import {
   telegramExchangeSchema,
   type TelegramExchangeRequest,
