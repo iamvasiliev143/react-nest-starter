@@ -1,8 +1,15 @@
 import { pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 
-export const telegramUsers = pgTable('telegram_users', {
+export const users = pgTable('users', {
   id: text().primaryKey(),
+  firstName: text('first_name'),
+  lastName: text('last_name'),
+  username: text(),
+  languageCode: text('language_code'),
   createdAt: timestamp('created_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
     .defaultNow()
     .notNull(),
 });

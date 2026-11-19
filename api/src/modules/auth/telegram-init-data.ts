@@ -1,16 +1,17 @@
 import { parse, validate } from '@tma.js/init-data-node';
+import type { UserProfile } from '../users/users.service.js';
 
 const MAX_AGE_SECONDS = 300;
 const CLOCK_SKEW_MS = 30_000;
 
 /**
  * Проверяет подпись и свежесть Telegram initData.
- * Возвращает id пользователя или null, если данные недействительны.
+ * Возвращает поля подтверждённого профиля или null при недействительных данных.
  */
 export function verifyTelegramInitData(
   initData: string,
   botToken: string,
-): string | null {
+): UserProfile | null {
   try {
     const params = new URLSearchParams(initData);
     if (params.size !== new Set(params.keys()).size) return null;
@@ -24,7 +25,13 @@ export function verifyTelegramInitData(
     ) {
       return null;
     }
-    return String(user.id);
+    return {
+      id: String(user.id),
+      firstName: user.first_name ?? null,
+      lastName: user.last_name ?? null,
+      username: user.username ?? null,
+      languageCode: user.language_code ?? null,
+    };
   } catch {
     return null;
   }

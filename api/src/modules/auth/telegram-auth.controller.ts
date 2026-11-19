@@ -54,12 +54,12 @@ export class TelegramAuthController {
     body: TelegramExchangeRequest,
   ): Promise<TelegramToken> {
     const botToken = this.config.get('TELEGRAM_BOT_TOKEN', { infer: true });
-    const id = botToken
+    const profile = botToken
       ? verifyTelegramInitData(body.initData, botToken)
       : null;
-    if (!id) throw invalidCredentials();
-    await this.users.ensure(id);
-    const { accessToken, expiresIn } = await this.tokens.issue(id, {
+    if (!profile) throw invalidCredentials();
+    await this.users.upsert(profile);
+    const { accessToken, expiresIn } = await this.tokens.issue(profile.id, {
       method: 'telegram',
     });
     return { accessToken, expiresIn };
