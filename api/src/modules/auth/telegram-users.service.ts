@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
-import { DatabaseService } from '../database/database.module.js';
-import { telegramUsers } from '../database/schema.js';
-import type { TelegramUser } from './telegram-auth.dto.js';
+import { DatabaseService } from '../../database/database.module.js';
+import { telegramUsers } from '../../database/schema.js';
+
+export type TelegramUserIdentity = { id: string };
 
 /** Хранилище пользователей Telegram. Без DATABASE_URL работает без БД. */
 @Injectable()
@@ -16,7 +17,7 @@ export class TelegramUsersService {
       .onConflictDoNothing();
   }
 
-  async find(id: string): Promise<TelegramUser | null> {
+  async find(id: string): Promise<TelegramUserIdentity | null> {
     if (!this.database.db) return { id };
     const [user] = await this.database.db
       .select({ id: telegramUsers.id })

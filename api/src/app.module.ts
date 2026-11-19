@@ -11,12 +11,12 @@ import {
 } from '@nestjs/i18n';
 import { LocalDisk, StorageModule } from '@nestjs/storage';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
-import { TelegramAuthModule } from './auth/telegram-auth.module.js';
+import { TelegramAuthModule } from './modules/auth/telegram-auth.module.js';
 import { validateEnvironment, type Environment } from './environment.js';
-import { GreetingModule } from './greeting/greeting.module.js';
-import { HealthModule } from './health/health.module.js';
+import { GreetingModule } from './modules/greeting/greeting.module.js';
+import { HealthModule } from './modules/health/health.module.js';
 import { translations } from './i18n.js';
-import { ObserveModule } from './observe.js';
+import { ObserveModule } from './common/observe.js';
 
 @Module({
   imports: [

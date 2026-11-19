@@ -34,6 +34,23 @@ export default defineConfig(
     },
   },
   {
+    files: ['api/src/{common,database}/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/modules/**'],
+              message:
+                'Keep shared and database code independent of feature modules.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: [
       'api/**/*.{ts,mjs,cjs}',
       'web/playwright.config.ts',

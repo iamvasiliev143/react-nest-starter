@@ -6,7 +6,7 @@ import { NodeAdapter, type NestNodeApplication } from '@nestjs/platform-node';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './app.module.js';
-import { ObserveInstrument } from './observe.js';
+import { ObserveInstrument } from './common/observe.js';
 import type { Environment } from './environment.js';
 
 export function createOpenApiDocument(app: INestApplication) {

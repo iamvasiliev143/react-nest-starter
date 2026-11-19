@@ -5,12 +5,14 @@ import {
   JwtBearerProvider,
   type JwtClaims,
 } from '@nestjs/authentication';
-import type { Environment } from '../environment.js';
-import type { TelegramUser } from './telegram-auth.dto.js';
-import { TelegramUsersService } from './telegram-users.service.js';
+import type { Environment } from '../../environment.js';
+import {
+  TelegramUsersService,
+  type TelegramUserIdentity,
+} from './telegram-users.service.js';
 
 @Injectable()
-export class TelegramBearer extends JwtBearerProvider<TelegramUser> {
+export class TelegramBearer extends JwtBearerProvider<TelegramUserIdentity> {
   constructor(
     config: ConfigService<Environment, true>,
     registry: AuthenticationRegistry,

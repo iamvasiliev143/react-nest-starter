@@ -13,14 +13,15 @@ import { CurrentUser, Public, TokenService } from '@nestjs/authentication';
 import { Can } from '@nestjs/authorization';
 import { ApiBearerAuth, ApiBody, ApiOkResponse } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import type { Environment } from '../environment.js';
-import {
-  TelegramToken,
-  TelegramUser,
-  telegramExchangeSchema,
-} from './telegram-auth.dto.js';
+import type { Environment } from '../../environment.js';
+import { telegramExchangeSchema } from './dto/telegram-exchange.request.dto.js';
+import { TelegramToken } from './dto/telegram-token.response.dto.js';
+import { TelegramUser } from './dto/telegram-user.response.dto.js';
 import { verifyTelegramInitData } from './telegram-init-data.js';
-import { TelegramUsersService } from './telegram-users.service.js';
+import {
+  TelegramUsersService,
+  type TelegramUserIdentity,
+} from './telegram-users.service.js';
 
 @Controller('auth')
 export class TelegramAuthController {
@@ -64,7 +65,7 @@ export class TelegramAuthController {
   @Header('Cache-Control', 'no-store')
   @ApiBearerAuth()
   @ApiOkResponse({ type: TelegramUser })
-  me(@CurrentUser() user: TelegramUser) {
+  me(@CurrentUser() user: TelegramUserIdentity): TelegramUser {
     return user;
   }
 }

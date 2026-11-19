@@ -7,7 +7,7 @@ import {
   HealthIndicatorService,
 } from '@nestjs/terminus';
 import { SkipThrottle } from '@nestjs/throttler';
-import { DatabaseService } from '../database/database.module.js';
+import { DatabaseService } from '../../database/database.module.js';
 import { HealthStatus } from './health.dto.js';
 
 @Public()
