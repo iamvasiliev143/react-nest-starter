@@ -7,9 +7,9 @@ import {
   type HealthIndicatorFunction,
 } from '@nestjs/terminus';
 import { SkipThrottle } from '@nestjs/throttler';
-import { HealthStatus } from './dto/health-status.response.dto.js';
-import { PostgresHealthIndicator } from './indicators/postgres.health-indicator.js';
-import { RedisHealthIndicator } from './indicators/redis.health-indicator.js';
+import { HealthStatus } from './dto/health-status.response.dto';
+import { PostgresHealthIndicator } from './indicators/postgres.health-indicator';
+import { RedisHealthIndicator } from './indicators/redis.health-indicator';
 
 @Public()
 @ApiTags('Status')

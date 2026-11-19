@@ -1,5 +1,5 @@
 import { parse, validate } from '@tma.js/init-data-node';
-import type { UserProfile } from '../users/interfaces/user.interface.js';
+import type { UserProfile } from '../users/interfaces/user.interface';
 
 const MAX_AGE_SECONDS = 300;
 const CLOCK_SKEW_MS = 30_000;

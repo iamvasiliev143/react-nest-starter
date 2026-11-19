@@ -1,6 +1,6 @@
 import { Injectable, type OnApplicationShutdown } from '@nestjs/common';
 import { Redis } from 'ioredis';
-import { AppConfig } from '../../common/config/app-config.js';
+import { AppConfig } from '../../common/config/app-config';
 
 const TIMEOUT_MS = 3000;
 
@@ -10,9 +10,9 @@ export class RedisService implements OnApplicationShutdown {
   readonly client?: Redis;
 
   constructor(config: AppConfig) {
-    const url = config.get('REDIS_URL', { infer: true });
-    if (url) {
-      this.client = new Redis(url, {
+    const connectionString = config.get('REDIS_URL', { infer: true });
+    if (connectionString) {
+      this.client = new Redis(connectionString, {
         lazyConnect: true,
         connectTimeout: TIMEOUT_MS,
         commandTimeout: TIMEOUT_MS,

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { PostgresService } from './postgres.service.js';
-import { UsersRepository } from './repositories/users.repository.js';
+import { PostgresService } from './postgres.service';
+import { UsersRepository } from './repositories/users.repository';
 
 const repositories = [UsersRepository];
 

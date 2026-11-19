@@ -1,8 +1,8 @@
 import { Injectable, type OnApplicationShutdown } from '@nestjs/common';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import { AppConfig } from '../../common/config/app-config.js';
-import * as schema from './schema/index.js';
+import { AppConfig } from '../../common/config/app-config';
+import * as schema from './schema/index';
 
 const TIMEOUT_MS = 3000;
 

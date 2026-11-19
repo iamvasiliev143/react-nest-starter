@@ -1,5 +1,5 @@
 import { createObserveModule } from '@nestjs/observe';
-import { AppConfig } from './config/app-config.js';
+import { AppConfig } from './config/app-config';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule({
   sourceContext: false,
