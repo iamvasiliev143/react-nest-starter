@@ -26,7 +26,7 @@ React 19, Vite 8 и TypeScript используются для интерфей�
 
 ## Переменные окружения
 
-`npm run setup` создаёт корневой `.env` из `.env.example` и `api/.env` из `api/.env.example`. Повторный запуск сохраняет существующие значения. Оба рабочих env-файла исключены из Git. Данные примеров соответствуют локальному Docker Compose. При переносе на другой хостинг задавай его адреса и учётные данные.
+`npm run setup` создаёт `.env`, `api/.env` и `web/.env` из соответствующих `.env.example`. При повторном запуске сохраняет заданные значения, добавляет недостающие поля меню Telegram и заполняет пустой URL Mini App из `NGROK_DOMAIN`, если он задан. Все три рабочих env-файла исключены из Git. Данные примеров соответствуют локальному Docker Compose.
 
 ### API — `api/.env`
 
@@ -54,9 +54,27 @@ API читает конфигурацию через `@nestjs/config` и про�
 
 Обе пары необязательных ключей валидируются целиком. При пустой паре Telegram доступны публичные страницы, а вход отвечает `503`. При пустой паре Observe работают локальные Nest-логи.
 
-### Кошелёк TON — `web/.env.local`
+`TON_CENTER_API_KEY` в `api/.env` предназначен для серверных запросов к TON Center. В текущем коде он пока не используется.
 
-Чтобы включить подключение кошелька, задай `VITE_TONCONNECT_MANIFEST_URL` с публичным HTTPS-адресом манифеста до запуска Vite или сборки фронтенда. Для CI передай переменную в окружение шага сборки. Vite записывает её в клиентский код при сборке. Опубликуй манифест с полями `url`, `name` и `iconUrl` и разреши доступ к нему без авторизации. Подробности есть в [документации TON Connect](https://docs.ton.org/applications/ton-connect/get-started).
+### Web — `web/.env`
+
+`npm run setup` создаёт `web/.env` из [`web/.env.example`](web/.env.example). Vite читает этот файл при запуске и сборке фронтенда. Настройки кошелька, аналитики и ngrok можно оставить пустыми. [Запуск через ngrok](docs/integrations.md#запуск-через-ngrok)
+
+#### Кошелёк TON
+
+Для production подставь домен приложения, его название и URL иконки в [`web/public/tonconnect-manifest.json`](web/public/tonconnect-manifest.json). В `web/public/tonconnect-icon.png` есть временная иконка PNG размером 180 × 180. Vite скопирует файлы из `web/public` в сборку. Манифест и иконка должны быть доступны по HTTPS без авторизации, а манифест — без ограничений CORS.
+
+При локальной разработке через ngrok Vite подставляет `NGROK_DOMAIN` в манифест и URL иконки. Для этого `VITE_TONCONNECT_MANIFEST_URL` должен указывать на `https://<домен-ngrok>/tonconnect-manifest.json`.
+
+Задай `VITE_TONCONNECT_MANIFEST_URL` с публичным адресом вида `https://your-domain.example/tonconnect-manifest.json` до запуска Vite или сборки фронтенда. Для CI передай переменную в окружение шага сборки. [Документация TON Connect](https://docs.ton.org/applications/ton-connect/get-started)
+
+#### Telegram Analytics
+
+Документация Analytics описывает выдачу клиентского SDK-токена в разделе **Analytics** портала TON Builders. Для регистрации нужны ссылка на Telegram-бота и домен Mini App. Адрес портала перенаправляет на главную TON, поэтому доступность выдачи новых токенов по этой инструкции пока не подтверждена. README SDK также упоминает `@DataChief_bot`. [Инструкция по получению токена](https://docs.tganalytics.xyz/sdk/preparations) · [README SDK](https://github.com/telegram-mini-apps-dev/analytics#installation)
+
+При наличии токена и идентификатора аналитики приложения (`Analytics Identifier`) запиши их в `web/.env` по шаблону [`web/.env.example`](web/.env.example) и перезапусти Vite или пересобери фронтенд. Значения `VITE_` доступны в браузерной сборке, поэтому токен BotFather оставляй в `api/.env`.
+
+SDK загружается при запуске с данными Telegram, когда заданы обе переменные, ещё до входа в API приложения. С событиями запуска и TON Connect он передаёт Telegram ID и метаданные сессии, включая платформу, язык и `start_param`. При подключении кошелька SDK может отправлять его адрес в Telegram Analytics, а адрес и метрики устройства — в Innerworks. [Инструкция подключения](https://github.com/telegram-mini-apps-dev/analytics) · [Исходный код SDK](https://github.com/telegram-mini-apps-dev/analytics/blob/master/src/app.ts)
 
 ### MCP — корневой `.env`
 
@@ -83,7 +101,7 @@ Vite проксирует API на `http://127.0.0.1:3000`. В production кли
 
 ## Создание проекта из шаблона
 
-В новом клоне выполните `npm run setup -- --name my-project`. Команда переименует корневой пакет и workspaces в `my-project`, `my-project-api`, `my-project-web`, синхронизирует npm lockfile и создаст `api/.env` для API и корневой `.env` для MCP. Повторный запуск сохраняет существующие env-файлы. Без `--name` используются текущие имена.
+В новом клоне выполни `npm run setup -- --name my-project`. Команда переименует корневой пакет и workspaces в `my-project`, `my-project-api`, `my-project-web`, синхронизирует npm lockfile и создаст env-файлы для API, фронтенда и MCP. Без `--name` используются текущие имена.
 
 Если при первом запуске задана переменная окружения `TELEGRAM_BOT_TOKEN`, setup запишет её в новый env-файл и сгенерирует секрет доступа. Значения секретов в вывод не попадают. При пустом токене авторизация Telegram остаётся выключенной. Существующие настройки редактируйте в `api/.env`.
 
@@ -120,6 +138,7 @@ Vite проксирует API на `http://127.0.0.1:3000`. В production кли
 | Маршрут                                  | Доступ               | Назначение                                                       |
 | ---------------------------------------- | -------------------- | ---------------------------------------------------------------- |
 | `GET /api/health`                        | Публичный            | Liveness процесса.                                               |
+| `GET /api/health/app`                    | Публичный            | Статус Mini App, `active` или `maintenance`.                     |
 | `GET /api/health/ready`                  | Публичный            | Readiness PostgreSQL, Redis и S3. При отказе возвращается `503`. |
 | `GET /api/v1/greeting`                   | Публичный            | Пример локализации по `Accept-Language`, языки `en` и `ru`.      |
 | `POST /api/v1/auth/telegram`             | Публичный            | Проверка Telegram `initData` и выдача access-токена.             |
@@ -127,7 +146,7 @@ Vite проксирует API на `http://127.0.0.1:3000`. В production кли
 | `POST /api/v1/client-errors`             | Публичный, с лимитом | Приём категорий клиентских ошибок.                               |
 | `GET /api/docs`, `GET /api/openapi.json` | Development и test   | Swagger UI и OpenAPI.                                            |
 
-Для запуска Mini App настрой бота и публичный HTTPS-адрес интерфейса в Telegram. На сервер передаётся исходная строка `initData`, её подпись и свежесть проверяются до сохранения профиля и выдачи токена. Access-токен действует 15 минут. Клиент хранит его в памяти и при `401` завершает сессию с возможностью повторного входа.
+Для запуска Mini App настрой бота и публичный HTTPS-адрес интерфейса. При запуске API URL, подпись кнопки и режим открытия из `api/.env` применяются автоматически. Для локальной разработки в Telegram используй `npm run dev:tunnel:ngrok`. На сервер передаётся исходная строка `initData`, её подпись и свежесть проверяются до сохранения профиля и выдачи токена. Access-токен действует 15 минут. Клиент хранит его в памяти и при `401` завершает сессию с возможностью повторного входа. [Настройка меню и режимов открытия](docs/integrations.md#кнопка-меню-и-размер-mini-app)
 
 Секрет доступа можно сгенерировать локально командой `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"` и записать результат в `api/.env`. Setup генерирует секрет автоматически, если при создании env-файла в окружении уже задан `TELEGRAM_BOT_TOKEN`.
 

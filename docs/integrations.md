@@ -2,11 +2,74 @@
 
 ## Telegram Mini App
 
-По умолчанию интерфейс и публичные маршруты API работают без бота. Чтобы включить вход, скопируй `api/.env.example` в `api/.env`, задай `TELEGRAM_BOT_TOKEN` и уникальный `AUTH_TOKEN_SECRET` длиной от 32 символов. Секрет можно сгенерировать командой `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`. Для запуска внутри Telegram укажи публичный HTTPS-адрес интерфейса в настройках бота.
+### Локальная разработка в Telegram
 
-Клиент передаёт подписанный `Telegram.WebApp.initData` телом запроса в `POST /api/v1/auth/telegram`. Сервер проверяет подпись и допустимый возраст данных (5 минут), затем выдаёт Bearer-токен на 15 минут. Клиент хранит токен в памяти приложения и добавляет его к защищённым запросам. При истечении токена или ответе `401` от защищённого маршрута сессия очищается. При повторном входе сервер проверяет `initData` по своему времени. Если сервер отклоняет эти данные, интерфейс предлагает открыть Mini App заново из Telegram. Cookies и постоянное хранилище браузера не используются. Бизнес-права добавляй через политики `@Can()`, а публичные маршруты явно помечай `@Public()`. [Telegram Mini Apps](https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app)
+1. Запусти `npm run dev` из корня и проверь, что приложение открывается на `http://127.0.0.1:5173`.
+2. Установи `cloudflared`, если его нет, и во втором терминале запусти `npm run dev:tunnel`. Команда напечатает временный HTTPS-адрес `trycloudflare.com`.
+3. В `@BotFather` укажи этот адрес для кнопки меню (`/setmenubutton`) или Main Mini App тестового бота. Открой приложение через эту кнопку в обычном клиенте Telegram. Для входа в `api/.env` должен быть токен того же бота и `AUTH_TOKEN_SECRET`.
 
-Клиентский адаптер `web/src/common/telegram/telegram.ts` использует стабильный `@tma.js/sdk-react` v3. В Telegram он подключает тему, безопасные отступы и нативную кнопку «Назад». Браузерный режим использует нейтральное оформление. Playwright проверяет имитацию Telegram, повторный вход после `401` и доступность обычных экранов через axe.
+Туннель направляет запросы на Vite, а Vite проксирует `/api` на локальный NestJS. `cloudflared` передаёт Vite локальный заголовок `Host`, поэтому дополнительный список разрешённых доменов не нужен. При новом запуске Quick Tunnel адрес меняется. Пока туннель работает, dev-сервер доступен всем, у кого есть ссылка. Используй тестового бота и локальные данные. [Cloudflare Quick Tunnels](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/) · [Запуск Mini App через меню бота](https://core.telegram.org/bots/webapps#launching-mini-apps-from-the-menu-button)
+
+#### Запуск через ngrok
+
+1. В `web/.env` укажи `NGROK_AUTHTOKEN` и `NGROK_DOMAIN`. Домен запиши без `https://` и пути, например `your-host.ngrok-free.app`. Vite разрешит запросы с этого хоста при следующем запуске.
+2. Запусти или перезапусти `npm run dev`. Во втором терминале выполни `npm run dev:tunnel:ngrok`. Команда использует SDK из npm, отдельная установка CLI не нужна.
+3. Выполни `npm run setup`, затем перезапусти `npm run dev`, чтобы API применил кнопку меню тестового бота. Если адрес был задан ранее, обнови его в `api/.env` перед перезапуском. Если ngrok покажет промежуточную страницу в Telegram, нажми **Visit Site**.
+
+Публичный адрес ngrok также открывает `/api` через Vite. Используй тестового бота и локальные данные. `NGROK_AUTHTOKEN` используется только командой туннеля и не попадает в клиентскую сборку. [Настройка ngrok](https://ngrok.com/docs/getting-started/javascript) · [Разрешённые хосты Vite](https://vite.dev/config/server-options.html#server-allowedhosts)
+
+### Кнопка меню и размер Mini App
+
+Для кнопки **Open** открой настройки нужного бота в `@BotFather`, включи **Main Mini App** и укажи публичный HTTPS-адрес приложения. Проверь кнопку в профиле бота и в списке чатов в своём клиенте Telegram. Размещение в списке зависит от клиента. [Настройка Main Mini App](https://core.telegram.org/api/bots/webapps#main-mini-apps)
+
+В `api/.env` задай `TELEGRAM_BOT_TOKEN` и публичный `TELEGRAM_MINI_APP_URL`. При пустом URL `npm run setup` может подставить `https://` и домен из `NGROK_DOMAIN` в `web/.env`. `TELEGRAM_MINI_APP_BUTTON_TEXT` задаёт подпись кнопки, по умолчанию «Открыть приложение». После запуска HTTP-сервера API через grammY обновляет стандартную кнопку бота в личных чатах. Если Telegram недоступен, API продолжает работать и записывает предупреждение. Для разных окружений используй разные токены ботов, а для реплик одного окружения задавай одинаковые URL, подпись и размер. Main Mini App в профиле бота настраивается в BotFather. [Bot API](https://core.telegram.org/bots/api#setchatmenubutton) · [grammY](https://grammy.dev/ref/core/api#setchatmenubutton)
+
+`TELEGRAM_MINI_APP_SIZE` принимает `default` (стандартный размер Telegram), `expanded` (максимальная высота WebView) или `fullscreen` (полноэкранный режим, если клиент поддерживает его). Если полноэкранный режим недоступен, приложение пробует `expanded`. Режим передаётся через URL кнопки. Для отдельных прямых ссылок Telegram поддерживает `mode=compact`. [Режимы открытия](https://core.telegram.org/bots/webapps#launching-mini-apps-from-direct-links)
+
+Нативный **Launch Screen** настраивается в BotFather в разделе **Configure Mini App**. Там задаются иконка и цвета фона и заголовка для обеих тем. Telegram показывает этот экран до запуска веб-приложения. [Настройка экрана загрузки](https://core.telegram.org/bots/webapps)
+
+### Авторизация
+
+Публичные маршруты API работают без бота. Если Telegram не передал initData, интерфейс показывает экран ошибки входа и не загружает приложение, не запускает аналитику и не отправляет запросы в API. Чтобы включить вход, скопируй `api/.env.example` в `api/.env`, задай `TELEGRAM_BOT_TOKEN` и уникальный `AUTH_TOKEN_SECRET` длиной от 32 символов. Секрет можно сгенерировать командой `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`. Для запуска внутри Telegram укажи публичный HTTPS-адрес интерфейса в настройках бота.
+
+При открытии Mini App клиент автоматически передаёт подписанный `Telegram.WebApp.initData` телом запроса в `POST /api/v1/auth/telegram`. Сервер проверяет подпись и допустимый возраст данных (5 минут), затем выдаёт Bearer-токен на 15 минут. Клиент хранит токен в памяти приложения и добавляет его к защищённым запросам. При истечении токена или ответе `401` от защищённого маршрута сессия очищается. При повторном входе сервер проверяет `initData` по своему времени. Если сервер отклоняет эти данные, интерфейс предлагает открыть Mini App заново из Telegram. Cookies и постоянное хранилище браузера не используются. Бизнес-права добавляй через политики `@Can()`, а публичные маршруты явно помечай `@Public()`. [Telegram Mini Apps](https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app)
+
+Клиентский адаптер `web/src/common/telegram/telegram.ts` использует стабильный `@tma.js/sdk-react` v3. В Telegram он подключает тему, безопасные отступы и нативную кнопку «Назад». Обычный браузер без данных запуска показывает экран ошибки входа. Playwright проверяет имитацию Telegram, повторный вход после `401` и доступность обычных экранов через axe.
+
+### Регистрация и реферальные ссылки
+
+Пользователь появляется в PostgreSQL после `/start` в личном чате или первого успешного входа в Mini App. Поля профиля обновляются при повторных обращениях. Сервер сохраняет Telegram ID, имя, фамилию, username, язык, Premium и URL фото, если Telegram его передал. Обновление без URL фото сохраняет ранее полученное значение. [Поля профиля Mini App](https://core.telegram.org/bots/webapps#webappuser)
+
+Для обработки `/start` включи `TELEGRAM_BOT_POLLING_ENABLED=true` на одном экземпляре API для каждого токена. Если у бота уже есть webhook, приложение оставит его подключённым и не запустит polling. При регистрации PostgreSQL выдаёт пользователю постоянный уникальный код `referralCode`. Миграция заполняет код у существующих пользователей. `GET /api/v1/auth/me` возвращает код и, при заданном `TELEGRAM_BOT_USERNAME` без `@`, две ссылки в поле `referralLinks`:
+
+- `https://t.me/<bot>?start=ref_<код>` открывает чат с ботом и передаёт параметр вместе с командой `/start`.
+- `https://t.me/<bot>?startapp=ref_<код>` открывает Main Mini App и передаёт параметр внутри подписанного `initData`. Чтобы направить ссылку в отдельный Direct Link, создай его в BotFather и запиши последний сегмент `t.me/<bot>/<short_name>` в `TELEGRAM_MINI_APP_SHORT_NAME`.
+
+Пригласивший должен уже существовать в базе. При первой регистрации сервер находит его по коду и сохраняет связь `users.referrer_id → users.id`. Повторные входы только обновляют профиль. Самореферал, неизвестный код и старый параметр с Telegram ID игнорируются. [Deep links бота](https://core.telegram.org/bots/features#deep-linking) · [Main Mini App и Direct Links](https://core.telegram.org/api/links#main-mini-app-links)
+
+## Режим технических работ
+
+На новой базе `npm run db:migrate` создаёт запись `app_status` в активном режиме. При поэтапном обновлении существующего окружения примени миграцию `0005` после обновления всех экземпляров API. Старые экземпляры читают удаляемые колонки.
+
+Для перехода с булева `maintenance` на `mode` останови экземпляры API, которые читают старую схему, примени миграции `0006` и `0007` и запусти новую версию. Миграции сохраняют текущий режим и время его изменения.
+
+Mini App запрашивает `GET /api/health/app` перед входом, каждые 5 секунд в активном окне и при возврате в приложение. Ответ содержит только `mode`. Во время работ Mini App показывает системную страницу на языке интерфейса и продолжает опрос. После работ он снова показывает текущий маршрут. Маршруты `/api/health` и `/api/health/ready` сохраняют инфраструктурное назначение.
+
+До появления админки оператор с доступом к PostgreSQL может включить режим:
+
+```sql
+UPDATE app_status
+SET mode = 'maintenance', updated_at = now()
+WHERE singleton = true;
+```
+
+Для возвращения в активный режим:
+
+```sql
+UPDATE app_status
+SET mode = 'active', updated_at = now()
+WHERE singleton = true;
+```
 
 ## Notion MCP
 
@@ -47,7 +110,7 @@ codex -c 'mcp_servers.notion.url="https://mcp.notion.com/mcp"' mcp login notion
 DATABASE_URL=postgresql://starter:starter-local@127.0.0.1:5434/starter
 ```
 
-Затем выполни `npm run db:migrate`. `DATABASE_URL` обязателен: без него API не запустится. Вход создаёт или обновляет запись в `users` по Telegram ID. В базовой схеме хранятся имя, фамилия, username, язык и даты создания и обновления. Профиль берётся из проверенных данных Telegram.
+Затем выполни `npm run db:migrate`. `DATABASE_URL` обязателен: без него API не запустится. Вход создаёт или обновляет запись в `users` по Telegram ID. Профиль берётся из проверенных данных Telegram.
 
 Код базы лежит в `api/src/database/postgres/`: таблицы Drizzle в `schema/`, запросы в `repositories/`, миграции в `migrations/`. Для новой миграции измени схему и выполни `npm run db:generate -w api`.
 
