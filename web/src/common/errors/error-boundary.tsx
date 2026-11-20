@@ -2,6 +2,9 @@ import { Component, type ReactNode } from 'react';
 import { reportClientError } from './error-reporting';
 
 type RecoveryLabels = { title: string; description: string; reload: string };
+type ErrorBoundaryProps = { children: ReactNode } & (
+  { labels: RecoveryLabels } | { fallback: ReactNode }
+);
 
 export function RecoveryScreen({ labels }: { labels: RecoveryLabels }) {
   return (
@@ -18,7 +21,7 @@ export function RecoveryScreen({ labels }: { labels: RecoveryLabels }) {
 }
 
 export class ErrorBoundary extends Component<
-  { children: ReactNode; labels: RecoveryLabels },
+  ErrorBoundaryProps,
   { failed: boolean }
 > {
   state = { failed: false };
@@ -32,10 +35,8 @@ export class ErrorBoundary extends Component<
   }
 
   render() {
-    return this.state.failed ? (
-      <RecoveryScreen labels={this.props.labels} />
-    ) : (
-      this.props.children
-    );
+    if (!this.state.failed) return this.props.children;
+    if ('fallback' in this.props) return this.props.fallback;
+    return <RecoveryScreen labels={this.props.labels} />;
   }
 }
