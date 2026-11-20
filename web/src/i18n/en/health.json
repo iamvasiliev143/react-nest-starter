@@ -2,5 +2,7 @@
   "section": "API status and sign-in",
   "checking": "Checking API…",
   "available": "API connected",
-  "check": "Check API"
+  "check": "Check API",
+  "maintenance": "Scheduled maintenance",
+  "maintenanceDescription": "The app will reopen automatically when maintenance ends."
 }

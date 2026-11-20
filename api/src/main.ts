@@ -2,6 +2,8 @@ import { Logger } from '@nestjs/common';
 import { API_PREFIX } from './app-setup.js';
 import { AppConfig } from './common/config/app-config.js';
 import { createApp } from './create-app.js';
+import { TelegramBotMenuService } from './modules/telegram-bot/telegram-bot-menu.service.js';
+import { TelegramBotUpdatesService } from './modules/telegram-bot/telegram-bot-updates.service.js';
 import { SWAGGER_UI_PATH } from './swagger.js';
 
 async function bootstrap() {
@@ -12,6 +14,8 @@ async function bootstrap() {
     config.get('PORT', { infer: true }),
     config.get('HOST', { infer: true }),
   );
+  void app.get(TelegramBotMenuService).sync();
+  void app.get(TelegramBotUpdatesService).start();
 
   const logger = new Logger('Bootstrap');
   const baseUrl = await app.getUrl();

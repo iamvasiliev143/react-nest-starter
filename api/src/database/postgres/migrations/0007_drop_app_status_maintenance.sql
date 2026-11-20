@@ -1,0 +1,1 @@
+ALTER TABLE "app_status" DROP COLUMN "maintenance";

@@ -120,7 +120,10 @@ test('global error DTOs agree with runtime responses and OpenAPI', () => {
     assert.equal(response.body.message, dto.message);
     const schema = spec.components.schemas[ErrorDto.name];
     assert.deepEqual(schema.properties.statusCode.enum, [Number(status)]);
-    assert.deepEqual(schema.properties.code.enum, [dto.code]);
+    assert.deepEqual(
+      schema.properties.code.enum,
+      Number(status) === 503 ? [dto.code, 'MAINTENANCE'] : [dto.code],
+    );
     assert.equal(schema.properties.message.type, 'string');
     assert.equal(schema.properties.statusCode.type, 'number');
     assert.ok(schema.required.includes('requestId'));

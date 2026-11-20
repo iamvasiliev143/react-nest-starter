@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { ErrorBoundary } from '../../common/errors/error-boundary';
 import { TelegramAuthPanel } from '../../modules/auth/TelegramAuthPanel';
 import { ApiStatus } from '../../modules/health/ApiStatus';
+import type { useAppStatus } from '../../modules/health/useAppStatus';
+import { HomeNote } from './HomeNote';
 
 const WalletPanel = lazy(() => import('../../modules/wallet/WalletPanel'));
 const manifestUrl = readManifestUrl(
@@ -22,16 +24,19 @@ function readManifestUrl(value: string | undefined) {
 
 export function HomePage({
   auth,
+  health,
 }: {
   auth: UseMutationResult<void, Error, string>;
+  health: ReturnType<typeof useAppStatus>;
 }) {
   const { t } = useTranslation(['health', 'navigation']);
   return (
     <>
       <section aria-label={t('section')}>
-        <ApiStatus />
+        <ApiStatus health={health} />
         <TelegramAuthPanel auth={auth} />
       </section>
+      <HomeNote />
       {manifestUrl && (
         <section aria-labelledby="wallet-title">
           <h2 id="wallet-title">{t('navigation:wallet')}</h2>

@@ -2,5 +2,7 @@
   "section": "Состояние API и вход",
   "checking": "Проверяем API…",
   "available": "API подключён",
-  "check": "Проверить API"
+  "check": "Проверить API",
+  "maintenance": "Технические работы",
+  "maintenanceDescription": "Приложение откроется автоматически, когда работы завершатся."
 }

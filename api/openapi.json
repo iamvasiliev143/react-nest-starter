@@ -249,6 +249,97 @@
         ]
       }
     },
+    "/api/health/app": {
+      "get": {
+        "operationId": "AppStatusController_read",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequestsErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceUnavailableErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Status"
+        ]
+      }
+    },
     "/api/v1/client-errors": {
       "post": {
         "operationId": "ClientErrorsController_report_v1",
@@ -818,6 +909,21 @@
           "details"
         ]
       },
+      "AppStatus": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "active",
+              "maintenance"
+            ]
+          }
+        },
+        "required": [
+          "mode"
+        ]
+      },
       "Greeting": {
         "type": "object",
         "properties": {
@@ -845,15 +951,40 @@
           "expiresIn"
         ]
       },
+      "TelegramReferralLinks": {
+        "type": "object",
+        "properties": {
+          "bot": {
+            "type": "string",
+            "format": "uri"
+          },
+          "miniApp": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "bot",
+          "miniApp"
+        ]
+      },
       "TelegramUser": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string"
+          },
+          "referralCode": {
+            "type": "string",
+            "pattern": "^r[A-Za-z0-9_-]{16}$"
+          },
+          "referralLinks": {
+            "$ref": "#/components/schemas/TelegramReferralLinks"
           }
         },
         "required": [
-          "id"
+          "id",
+          "referralCode"
         ]
       },
       "ApiErrorResponseDto": {
@@ -1118,7 +1249,8 @@
             "type": "string",
             "example": "SERVICE_UNAVAILABLE",
             "enum": [
-              "SERVICE_UNAVAILABLE"
+              "SERVICE_UNAVAILABLE",
+              "MAINTENANCE"
             ]
           },
           "message": {

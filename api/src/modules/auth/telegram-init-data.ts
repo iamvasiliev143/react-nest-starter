@@ -11,12 +11,16 @@ const CLOCK_SKEW_MS = 30_000;
 export function verifyTelegramInitData(
   initData: string,
   botToken: string,
-): UserProfile | null {
+): { profile: UserProfile; startParam: string | undefined } | null {
   try {
     const params = new URLSearchParams(initData);
     if (params.size !== new Set(params.keys()).size) return null;
     validate(initData, botToken, { expiresIn: MAX_AGE_SECONDS });
-    const { user, auth_date: authDate } = parse(initData);
+    const {
+      user,
+      auth_date: authDate,
+      start_param: startParam,
+    } = parse(initData);
     if (
       !user ||
       !Number.isSafeInteger(user.id) ||
@@ -26,11 +30,16 @@ export function verifyTelegramInitData(
       return null;
     }
     return {
-      id: String(user.id),
-      firstName: user.first_name ?? null,
-      lastName: user.last_name ?? null,
-      username: user.username ?? null,
-      languageCode: user.language_code ?? null,
+      startParam,
+      profile: {
+        id: String(user.id),
+        firstName: user.first_name ?? null,
+        lastName: user.last_name ?? null,
+        username: user.username ?? null,
+        languageCode: user.language_code ?? null,
+        isPremium: user.is_premium === true,
+        photoUrl: user.photo_url,
+      },
     };
   } catch {
     return null;

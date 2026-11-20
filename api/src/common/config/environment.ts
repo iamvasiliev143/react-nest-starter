@@ -33,6 +33,42 @@ const schema = z
     OBSERVE_APP_KEY: optionalText,
     OBSERVE_APP_SECRET: optionalText,
     TELEGRAM_BOT_TOKEN: optionalText,
+    TELEGRAM_BOT_POLLING_ENABLED: z.stringbool().default(false),
+    TELEGRAM_BOT_USERNAME: z.preprocess(
+      (value) => (value === '' ? undefined : value),
+      z
+        .string()
+        .regex(/^[a-zA-Z0-9_]{5,32}$/)
+        .optional(),
+    ),
+    TELEGRAM_MINI_APP_SHORT_NAME: z.preprocess(
+      (value) => (value === '' ? undefined : value),
+      z
+        .string()
+        .regex(/^[a-zA-Z0-9_]{1,64}$/)
+        .optional(),
+    ),
+    TELEGRAM_MINI_APP_URL: z.preprocess(
+      (value) =>
+        typeof value === 'string' ? value.trim() || undefined : value,
+      z
+        .url({ protocol: /^https$/ })
+        .refine((value) => {
+          const url = URL.parse(value);
+          return Boolean(url?.hostname && !url.username && !url.password);
+        }, 'Expected an HTTPS URL without credentials.')
+        .optional(),
+    ),
+    TELEGRAM_MINI_APP_BUTTON_TEXT: z.preprocess(
+      (value) =>
+        typeof value === 'string' ? value.trim() || undefined : value,
+      z.string().min(1).default('Открыть приложение'),
+    ),
+    TELEGRAM_MINI_APP_SIZE: z.preprocess(
+      (value) =>
+        typeof value === 'string' ? value.trim() || undefined : value,
+      z.enum(['default', 'expanded', 'fullscreen']).default('default'),
+    ),
     AUTH_TOKEN_SECRET: z.preprocess(
       (value) => (value === '' ? undefined : value),
       z.string().min(32).optional(),
@@ -51,6 +87,20 @@ const schema = z
         code: 'custom',
         path: ['TELEGRAM_BOT_TOKEN'],
         message: 'Configure both the bot token and the access-token secret.',
+      });
+    }
+    if (env.TELEGRAM_BOT_POLLING_ENABLED && !env.TELEGRAM_BOT_TOKEN) {
+      context.addIssue({
+        code: 'custom',
+        path: ['TELEGRAM_BOT_POLLING_ENABLED'],
+        message: 'Configure the bot token before enabling polling.',
+      });
+    }
+    if (env.TELEGRAM_MINI_APP_SHORT_NAME && !env.TELEGRAM_BOT_USERNAME) {
+      context.addIssue({
+        code: 'custom',
+        path: ['TELEGRAM_BOT_USERNAME'],
+        message: 'Configure the bot username for the direct Mini App link.',
       });
     }
   });

@@ -7,8 +7,10 @@ import { HealthStatus } from './dto/health-status.response.dto.js';
 import { PostgresHealthIndicator } from './indicators/postgres.health-indicator.js';
 import { RedisHealthIndicator } from './indicators/redis.health-indicator.js';
 import { S3HealthIndicator } from './indicators/s3.health-indicator.js';
+import { AllowDuringMaintenance } from './maintenance.guard.js';
 
 @Public()
+@AllowDuringMaintenance(true)
 @ApiTags('Status')
 @SkipThrottle()
 @Controller({ path: 'health', version: VERSION_NEUTRAL })

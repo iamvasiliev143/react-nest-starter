@@ -10,6 +10,7 @@ import type { ServerResponse } from 'node:http';
 import { randomUUID } from 'node:crypto';
 import { HTTP_ERROR_DTOS } from './error-responses.js';
 import { ApiErrorResponseDto } from './dto/api-error.response.dto.js';
+import { MaintenanceException } from './maintenance.exception.js';
 @Catch()
 export class ApiExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(ApiExceptionFilter.name);
@@ -28,7 +29,10 @@ export class ApiExceptionFilter implements ExceptionFilter {
     const ErrorDto =
       HTTP_ERROR_DTOS[statusCode] ??
       (statusCode >= 500 ? HTTP_ERROR_DTOS[500] : ApiErrorResponseDto);
-    const { code, message } = new ErrorDto();
+    const maintenance = exception instanceof MaintenanceException;
+    const { code, message } = maintenance
+      ? { code: 'MAINTENANCE', message: 'Scheduled maintenance' }
+      : new ErrorDto();
     const original =
       exception instanceof HttpException ? exception.getResponse() : undefined;
     const body =
@@ -47,7 +51,9 @@ export class ApiExceptionFilter implements ExceptionFilter {
             details: body.details,
           }
         : {};
-    if (statusCode >= 500) this.logger.error({ code, requestId, statusCode });
+    if (statusCode >= 500 && !maintenance) {
+      this.logger.error({ code, requestId, statusCode });
+    }
     adapter.reply(
       response,
       {

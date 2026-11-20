@@ -9,6 +9,7 @@ export default defineConfig({
   webServer: {
     command: 'npm run dev',
     cwd: '..',
+    env: { TELEGRAM_MINI_APP_URL: '' },
     url: 'http://127.0.0.1:5173/api/health',
     reuseExistingServer: !process.env.CI,
   },

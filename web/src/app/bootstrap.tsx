@@ -11,6 +11,7 @@ import {
 import enErrors from '../i18n/en/errors.json';
 import ruErrors from '../i18n/ru/errors.json';
 import { createAppI18n } from '../i18n';
+import { initializeTelegramAnalytics } from '../common/telegram/analytics';
 import {
   getTelegramLanguage,
   initializeTelegram,
@@ -35,6 +36,9 @@ function recoveryLabels() {
 
 async function bootstrap() {
   initializeTelegram();
+  void initializeTelegramAnalytics().catch(() => {
+    console.warn('Telegram Analytics initialization failed');
+  });
 
   const i18n = await createAppI18n(getTelegramLanguage());
   document.documentElement.lang = i18n.resolvedLanguage ?? i18n.language;

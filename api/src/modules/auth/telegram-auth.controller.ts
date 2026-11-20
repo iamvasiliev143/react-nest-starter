@@ -55,11 +55,12 @@ export class TelegramAuthController {
     body: TelegramExchangeRequest,
   ): Promise<TelegramToken> {
     const botToken = this.config.get('TELEGRAM_BOT_TOKEN', { infer: true });
-    const profile = botToken
+    const verified = botToken
       ? verifyTelegramInitData(body.initData, botToken)
       : null;
-    if (!profile) throw invalidCredentials();
-    await this.users.upsert(profile);
+    if (!verified) throw invalidCredentials();
+    const { profile, startParam } = verified;
+    await this.users.upsert(profile, startParam);
     const { accessToken, expiresIn } = await this.tokens.issue(profile.id, {
       method: 'telegram',
     });
@@ -72,6 +73,22 @@ export class TelegramAuthController {
   @ApiBearerAuth()
   @ApiOkResponse({ type: TelegramUser })
   me(@CurrentUser() user: UserIdentity): TelegramUser {
-    return user;
+    const username = this.config.get('TELEGRAM_BOT_USERNAME', { infer: true });
+    if (!username) return user;
+
+    const shortName = this.config.get('TELEGRAM_MINI_APP_SHORT_NAME', {
+      infer: true,
+    });
+    const bot = new URL(username, 'https://t.me/');
+    const miniApp = shortName
+      ? new URL(shortName, bot.href + '/')
+      : new URL(bot);
+    const referral = 'ref_' + user.referralCode;
+    bot.searchParams.set('start', referral);
+    miniApp.searchParams.set('startapp', referral);
+    return {
+      ...user,
+      referralLinks: { bot: bot.href, miniApp: miniApp.href },
+    };
   }
 }

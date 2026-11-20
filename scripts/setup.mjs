@@ -1,7 +1,14 @@
 import process from 'node:process';
 import console from 'node:console';
 import { randomBytes } from 'node:crypto';
-import { readFile, writeFile } from 'node:fs/promises';
+import {
+  mkdtemp,
+  readFile,
+  rename,
+  rmdir,
+  unlink,
+  writeFile,
+} from 'node:fs/promises';
 import { createConnection } from 'node:net';
 import { dirname, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -22,7 +29,56 @@ async function createEnvFile(path, contents) {
   }
 }
 
-export async function setupProject(root, { name, botToken } = {}) {
+async function replaceEnvFile(path, contents) {
+  const temporaryDirectory = await mkdtemp(
+    resolve(dirname(path), '.env.setup-'),
+  );
+  const temporaryFile = resolve(temporaryDirectory, '.env');
+  try {
+    await createEnvFile(temporaryFile, contents);
+    await rename(temporaryFile, path);
+  } finally {
+    await unlink(temporaryFile).catch((error) => {
+      if (error.code !== 'ENOENT') throw error;
+    });
+    await rmdir(temporaryDirectory);
+  }
+}
+
+function configureMiniAppEnv(contents, template, ngrokDomain) {
+  const environment = parseEnv(contents);
+  const defaults = parseEnv(template);
+  const domain = ngrokDomain?.trim().toLowerCase() ?? '';
+  const url = /^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/.test(domain)
+    ? `https://${domain}`
+    : '';
+  const keys = [
+    'TELEGRAM_MINI_APP_URL',
+    'TELEGRAM_MINI_APP_BUTTON_TEXT',
+    'TELEGRAM_MINI_APP_SIZE',
+  ];
+  const missing = keys.filter((key) => !Object.hasOwn(environment, key));
+  const newline = contents.includes('\r\n') ? '\r\n' : '\n';
+  let updated = contents;
+  if (url && environment.TELEGRAM_MINI_APP_URL === '') {
+    updated = updated.replace(
+      /^([\t ]*(?:export[\t ]+)?TELEGRAM_MINI_APP_URL[\t ]*=)[^\r\n]*/m,
+      (_, prefix) => prefix + url,
+    );
+  }
+  if (missing.length) {
+    const lines = missing.map((key) => {
+      const value = key === 'TELEGRAM_MINI_APP_URL' ? url : defaults[key];
+      return `${key}=${value ? JSON.stringify(value) : ''}`;
+    });
+    updated = [updated, '# Кнопка меню Telegram Mini App', ...lines, ''].join(
+      newline,
+    );
+  }
+  return updated;
+}
+
+export async function setupProject(root, { name, botToken, ngrokDomain } = {}) {
   if (name && !/^[a-z][a-z0-9-]{0,69}$/.test(name)) {
     throw new Error(
       'Имя должно начинаться с a-z и содержать до 70 символов a-z, 0-9 или дефис.',
@@ -44,6 +100,12 @@ export async function setupProject(root, { name, botToken } = {}) {
   ) {
     throw new Error('Ожидается npm lockfile v3 с workspaces api и web.');
   }
+
+  const [apiTemplate, webTemplate, mcpTemplate] = await Promise.all(
+    ['api/.env.example', 'web/.env.example', '.env.example'].map((path) =>
+      readFile(resolve(root, path), 'utf8'),
+    ),
+  );
 
   if (name) {
     const names = [name, name + '-api', name + '-web'];
@@ -86,7 +148,7 @@ export async function setupProject(root, { name, botToken } = {}) {
   }
 
   const envPath = resolve(root, 'api/.env');
-  let template = await readFile(resolve(root, 'api/.env.example'), 'utf8');
+  let template = apiTemplate;
   if (botToken) {
     template = template.replace(
       /^TELEGRAM_BOT_TOKEN=.*$/m,
@@ -97,13 +159,27 @@ export async function setupProject(root, { name, botToken } = {}) {
       () => 'AUTH_TOKEN_SECRET=' + randomBytes(48).toString('hex'),
     );
   }
-  const createdEnv = await createEnvFile(envPath, template);
-  const mcpTemplate = await readFile(resolve(root, '.env.example'), 'utf8');
+  const webEnvPath = resolve(root, 'web/.env');
+  const createdWebEnv = await createEnvFile(webEnvPath, webTemplate);
+  const { NGROK_DOMAIN } = parseEnv(await readFile(webEnvPath, 'utf8'));
+  const tunnelDomain = ngrokDomain ?? NGROK_DOMAIN;
+  const createdEnv = await createEnvFile(
+    envPath,
+    configureMiniAppEnv(template, apiTemplate, tunnelDomain),
+  );
+  const existingEnv = await readFile(envPath, 'utf8');
+  const updatedEnv = configureMiniAppEnv(
+    existingEnv,
+    apiTemplate,
+    tunnelDomain,
+  );
+  if (updatedEnv !== existingEnv) await replaceEnvFile(envPath, updatedEnv);
   const createdMcpEnv = await createEnvFile(resolve(root, '.env'), mcpTemplate);
   return {
     createdEnv,
+    createdWebEnv,
     createdMcpEnv,
-    environment: parseEnv(await readFile(envPath, 'utf8')),
+    environment: parseEnv(updatedEnv),
   };
 }
 
@@ -159,10 +235,12 @@ async function main() {
     throw new Error('Нужен Node.js 22.13 или новее.');
   const { values } = parseArgs({ options: { name: { type: 'string' } } });
   const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-  const { createdEnv, createdMcpEnv, environment } = await setupProject(root, {
-    name: values.name,
-    botToken: process.env.TELEGRAM_BOT_TOKEN,
-  });
+  const { createdEnv, createdWebEnv, createdMcpEnv, environment } =
+    await setupProject(root, {
+      name: values.name,
+      botToken: process.env.TELEGRAM_BOT_TOKEN,
+      ngrokDomain: process.env.NGROK_DOMAIN,
+    });
   console.log(
     values.name
       ? 'Имена пакетов и lockfile обновлены.'
@@ -170,6 +248,9 @@ async function main() {
   );
   console.log(
     createdEnv ? 'api/.env создан.' : 'Используется существующий api/.env.',
+  );
+  console.log(
+    createdWebEnv ? 'web/.env создан.' : 'Используется существующий web/.env.',
   );
   console.log(
     createdMcpEnv

@@ -2,6 +2,11 @@
   "sections": "Sections",
   "api": "API status",
   "time": "Date and time",
+  "note": "Note",
+  "editNote": "Edit note",
+  "saveNote": "Save",
+  "cancelNote": "Cancel",
   "wallet": "TON wallet",
+  "walletRestoring": "Checking the wallet connection…",
   "walletUnavailable": "Could not load the wallet. Reload the page to try again."
 }

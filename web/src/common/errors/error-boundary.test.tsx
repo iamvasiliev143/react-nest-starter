@@ -57,7 +57,7 @@ test('recovers when initial localization fails', async () => {
   const root = document.createElement('div');
   root.id = 'root';
   document.body.append(root);
-  await import('../../main');
+  await import('../../app/bootstrap');
   expect(
     await screen.findByRole('heading', {
       name: 'Не удалось загрузить приложение',

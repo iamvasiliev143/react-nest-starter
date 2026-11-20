@@ -60,6 +60,7 @@ export async function prepareTestServices() {
       DATABASE_URL: url.href,
       REDIS_URL: redisUrl.href,
       THROTTLER_KEY_PREFIX: 'throttler:test:' + randomUUID(),
+      TELEGRAM_BOT_POLLING_ENABLED: 'false',
       ...S3,
     };
   } finally {

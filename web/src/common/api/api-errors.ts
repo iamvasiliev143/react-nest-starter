@@ -8,6 +8,7 @@ const errorKeys = {
   NOT_FOUND: 'errors:notFound',
   RATE_LIMITED: 'errors:rateLimited',
   SERVICE_UNAVAILABLE: 'errors:apiUnavailable',
+  MAINTENANCE: 'errors:apiUnavailable',
   INTERNAL_ERROR: 'errors:serverError',
   HTTP_ERROR: 'errors:unknownError',
 } as const;

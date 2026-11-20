@@ -1,0 +1,3 @@
+ALTER TABLE "users" ADD COLUMN "referral_code" text DEFAULT 'r' || left(translate(encode(uuid_send(gen_random_uuid()), 'base64'), '+/', '-_'), 16) NOT NULL;--> statement-breakpoint
+ALTER TABLE "users" ADD CONSTRAINT "users_referral_code_unique" UNIQUE("referral_code");--> statement-breakpoint
+ALTER TABLE "users" ADD CONSTRAINT "users_referral_code_format" CHECK ("users"."referral_code" ~ '^r[A-Za-z0-9_-]{16}$');

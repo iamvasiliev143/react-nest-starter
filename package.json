@@ -11,6 +11,8 @@
   },
   "scripts": {
     "dev": "concurrently --kill-others --names api,web \"npm run dev -w api\" \"npm run dev -w web\"",
+    "dev:tunnel": "cloudflared tunnel --url http://127.0.0.1:5173 --http-host-header 127.0.0.1:5173",
+    "dev:tunnel:ngrok": "node --env-file-if-exists=web/.env scripts/dev-ngrok.mjs",
     "typecheck": "npm run typecheck --workspaces",
     "test": "node --test scripts/setup.test.mjs scripts/claude.test.mjs && npm test --workspaces",
     "build": "npm run build --workspaces",
@@ -33,6 +35,7 @@
     "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^21.2.4",
     "@eslint/js": "^10.0.1",
+    "@ngrok/ngrok": "1.8.0",
     "@playwright/mcp": "0.0.86",
     "@sentropic/engram": "0.28.0",
     "concurrently": "^10.0.7",
@@ -46,6 +49,9 @@
     "typescript-eslint": "^8.73.0"
   },
   "overrides": {
+    "antd-mobile": {
+      "@react-spring/web": "10.1.2"
+    },
     "@esbuild-kit/core-utils": {
       "esbuild": "^0.25.12"
     },

@@ -36,6 +36,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/health/app": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AppStatusController_read"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/client-errors": {
         parameters: {
             query?: never;
@@ -158,6 +174,10 @@ export interface components {
                 };
             };
         };
+        AppStatus: {
+            /** @enum {string} */
+            mode: "active" | "maintenance";
+        };
         Greeting: {
             /** @example Hello */
             message: string;
@@ -166,8 +186,16 @@ export interface components {
             accessToken: string;
             expiresIn: number;
         };
+        TelegramReferralLinks: {
+            /** Format: uri */
+            bot: string;
+            /** Format: uri */
+            miniApp: string;
+        };
         TelegramUser: {
             id: string;
+            referralCode: string;
+            referralLinks?: components["schemas"]["TelegramReferralLinks"];
         };
         ApiErrorResponseDto: {
             /** @example 400 */
@@ -292,7 +320,7 @@ export interface components {
              * @example SERVICE_UNAVAILABLE
              * @enum {string}
              */
-            code: "SERVICE_UNAVAILABLE";
+            code: "SERVICE_UNAVAILABLE" | "MAINTENANCE";
             /** @example Service unavailable */
             message: string;
             /** Format: uuid */
@@ -515,6 +543,88 @@ export interface operations {
                          */
                         details?: unknown;
                     } & components["schemas"]["TerminusHealthCheckResult"]) & components["schemas"]["ServiceUnavailableErrorResponseDto"];
+                };
+            };
+        };
+    };
+    AppStatusController_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppStatus"];
+                };
+            };
+            /** @description Request failed */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BadRequestErrorResponseDto"];
+                };
+            };
+            /** @description Request failed */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnauthorizedErrorResponseDto"];
+                };
+            };
+            /** @description Request failed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForbiddenErrorResponseDto"];
+                };
+            };
+            /** @description Request failed */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotFoundErrorResponseDto"];
+                };
+            };
+            /** @description Request failed */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TooManyRequestsErrorResponseDto"];
+                };
+            };
+            /** @description Request failed */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalServerErrorResponseDto"];
+                };
+            };
+            /** @description Request failed */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceUnavailableErrorResponseDto"];
                 };
             };
         };

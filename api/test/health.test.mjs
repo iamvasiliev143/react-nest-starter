@@ -1,8 +1,11 @@
 import assert from 'node:assert/strict';
 import { createHmac, randomUUID } from 'node:crypto';
 import test from 'node:test';
+import { setTimeout as delay } from 'node:timers/promises';
 import { Storage } from '@nestjs/storage';
 import { sign } from '@tma.js/init-data-node';
+import { eq } from 'drizzle-orm';
+import { Bot } from 'grammy';
 import { prepareTestServices } from './support/environment.mjs';
 
 // Подписывает initData с повторяющимися ключами: подпись валидна, и отказ
@@ -24,6 +27,8 @@ test('NodeAdapter, localization, storage and Telegram bearer auth are wired', as
   process.env.NODE_ENV = 'test';
   Object.assign(process.env, await prepareTestServices());
   process.env.TELEGRAM_BOT_TOKEN = botToken;
+  process.env.TELEGRAM_BOT_USERNAME = 'fixture_bot';
+  process.env.TELEGRAM_MINI_APP_SHORT_NAME = 'play';
   process.env.AUTH_TOKEN_SECRET = 'example-secret-only-used-in-tests-123';
   process.env.OBSERVE_APP_KEY = '';
   process.env.OBSERVE_APP_SECRET = '';
@@ -285,8 +290,212 @@ test('NodeAdapter, localization, storage and Telegram bearer auth are wired', as
         headers: { Authorization: 'Bearer ' + accessToken },
       });
       assert.equal(profile.status, 200);
-      assert.deepEqual(await profile.json(), { id: '12345' });
+      const account = await profile.json();
+      assert.match(account.referralCode, /^r[A-Za-z0-9_-]{16}$/);
+      assert.deepEqual(account, {
+        id: '12345',
+        referralCode: account.referralCode,
+        referralLinks: {
+          bot: 'https://t.me/fixture_bot?start=ref_' + account.referralCode,
+          miniApp:
+            'https://t.me/fixture_bot/play?startapp=ref_' +
+            account.referralCode,
+        },
+      });
     });
+
+    await t.test(
+      'registers and attributes first Telegram contacts through both entry points',
+      async () => {
+        const { registerTelegramStart } =
+          await import('../dist/modules/telegram-bot/telegram-start.js');
+        const { UsersService } =
+          await import('../dist/modules/users/users.service.js');
+        const { userSchema } =
+          await import('../dist/database/postgres/schema/user.schema.js');
+        const bot = new Bot(botToken, {
+          botInfo: {
+            id: 123456,
+            is_bot: true,
+            first_name: 'Fixture',
+            username: 'fixture_bot',
+          },
+        });
+        registerTelegramStart(bot, app.get(UsersService));
+        const baseId = Number(
+          '7' +
+            randomUUID()
+              .replace(/[^0-9]/g, '')
+              .slice(0, 11)
+              .padEnd(11, '0'),
+        );
+        const [
+          inviter,
+          otherInviter,
+          chatUser,
+          appUser,
+          selfRef,
+          unknownRef,
+          racingUser,
+          legacyRef,
+        ] = Array.from({ length: 8 }, (_, offset) => baseId + offset);
+        const start = (id, payload = '', user = {}) =>
+          bot.handleUpdate({
+            update_id: 1,
+            message: {
+              message_id: 1,
+              date: Math.floor(Date.now() / 1000),
+              chat: { id, type: 'private', first_name: 'Fixture' },
+              from: { id, is_bot: false, first_name: 'Fixture', ...user },
+              text: payload ? '/start ' + payload : '/start',
+              entities: [{ type: 'bot_command', offset: 0, length: 6 }],
+            },
+          });
+        const getUser = async (id) => {
+          const [row] = await app
+            .get(PostgresService)
+            .db.select()
+            .from(userSchema)
+            .where(eq(userSchema.id, String(id)));
+          return row;
+        };
+
+        await Promise.all([
+          start(inviter),
+          start(otherInviter),
+          start(selfRef),
+          start(unknownRef, 'ref_r0000000000000000'),
+        ]);
+        const inviterRow = await getUser(inviter);
+        const otherInviterRow = await getUser(otherInviter);
+        const invite = 'ref_' + inviterRow.referralCode;
+        const otherInvite = 'ref_' + otherInviterRow.referralCode;
+        assert.equal(inviterRow.referrerId, null);
+        assert.match(inviterRow.referralCode, /^r[A-Za-z0-9_-]{16}$/);
+        assert.notEqual(inviterRow.referralCode, otherInviterRow.referralCode);
+        const self = await getUser(selfRef);
+        await start(selfRef, 'ref_' + self.referralCode);
+        assert.equal((await getUser(selfRef)).referrerId, null);
+        assert.equal((await getUser(unknownRef)).referrerId, null);
+        await start(legacyRef, 'ref_' + inviter);
+        assert.equal((await getUser(legacyRef)).referrerId, null);
+        await start(selfRef, invite);
+        assert.equal((await getUser(selfRef)).referrerId, null);
+        await start(chatUser, invite);
+        assert.equal((await getUser(chatUser)).referrerId, String(inviter));
+        await Promise.all([
+          start(racingUser, invite),
+          start(racingUser, otherInvite),
+        ]);
+        const racingReferrer = (await getUser(racingUser)).referrerId;
+        assert.ok(
+          [String(inviter), String(otherInviter)].includes(racingReferrer),
+        );
+        await Promise.all([
+          start(racingUser, otherInvite),
+          start(racingUser, invite),
+        ]);
+        assert.equal((await getUser(racingUser)).referrerId, racingReferrer);
+
+        const photoUrl = 'https://t.me/i/userpic/320/fixture.svg';
+        const user = {
+          id: appUser,
+          first_name: 'Mini App',
+          is_premium: true,
+          photo_url: photoUrl,
+        };
+        const exchange = (initData) =>
+          fetch(base + '/api/v1/auth/telegram', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ initData }),
+          });
+        const signed = sign(
+          { user, start_param: invite },
+          botToken,
+          new Date(),
+        );
+        const tampered = new URLSearchParams(signed);
+        tampered.set('start_param', otherInvite);
+        assert.equal((await exchange(tampered.toString())).status, 401);
+        assert.equal(await getUser(appUser), undefined);
+        assert.equal((await exchange(signed)).status, 200);
+        const first = await getUser(appUser);
+        assert.equal(first.referrerId, String(inviter));
+        assert.match(first.referralCode, /^r[A-Za-z0-9_-]{16}$/);
+        assert.equal(first.isPremium, true);
+        assert.equal(first.photoUrl, photoUrl);
+
+        await start(appUser, otherInvite, { first_name: 'Updated' });
+        const updated = await getUser(appUser);
+        assert.equal(updated.firstName, 'Updated');
+        assert.equal(updated.isPremium, false);
+        assert.equal(updated.photoUrl, photoUrl);
+        assert.equal(updated.referrerId, String(inviter));
+        assert.equal(updated.referralCode, first.referralCode);
+      },
+    );
+
+    await t.test(
+      'maintenance gates HTTP and shares one status lookup per replica',
+      async (t) => {
+        const { AppStatusRepository } =
+          await import('../dist/database/postgres/repositories/app-status.repository.js');
+        const endpoint = base + '/api/health/app';
+        const active = await fetch(endpoint);
+        assert.equal(active.status, 200);
+        assert.equal(active.headers.get('cache-control'), 'no-store');
+        assert.deepEqual(await active.json(), {
+          mode: 'active',
+        });
+        assert.equal((await fetch(base + '/api/v1/app-status')).status, 404);
+
+        const repository = app.get(AppStatusRepository);
+        const read = t.mock.method(repository, 'read', async () => {
+          await delay(25);
+          return { mode: 'maintenance' };
+        });
+        await delay(1050);
+
+        const responses = await Promise.all([
+          ...Array.from({ length: 8 }, () => fetch(endpoint)),
+          fetch(base + '/api/v1/greeting'),
+          fetch(base + '/api/health'),
+          fetch(base + '/api/health/ready'),
+          fetch(base + '/api/v1/auth/telegram', { method: 'POST' }),
+        ]);
+        assert.equal(read.mock.callCount(), 1);
+        for (const response of responses.slice(0, 8)) {
+          assert.equal(response.status, 200);
+          assert.deepEqual(await response.json(), {
+            mode: 'maintenance',
+          });
+        }
+        assert.equal(responses[8].status, 503);
+        assert.equal((await responses[8].json()).code, 'MAINTENANCE');
+        assert.equal(responses[9].status, 200);
+        assert.equal(responses[10].status, 200);
+        assert.equal(responses[11].status, 503);
+        assert.equal((await responses[11].json()).code, 'MAINTENANCE');
+
+        read.mock.restore();
+        const failure = t.mock.method(repository, 'read', async () => {
+          throw new Error('internal storage failure');
+        });
+        await delay(1050);
+        for (const path of [endpoint, base + '/api/v1/greeting']) {
+          const response = await fetch(path);
+          assert.equal(response.status, 503);
+          assert.equal((await response.json()).code, 'SERVICE_UNAVAILABLE');
+        }
+        assert.equal(failure.mock.callCount(), 1);
+        assert.equal((await fetch(base + '/api/health')).status, 200);
+
+        failure.mock.restore();
+        await delay(1050);
+        assert.equal((await (await fetch(endpoint)).json()).mode, 'active');
+      },
+    );
   } finally {
     await app?.close();
   }

@@ -8,6 +8,55 @@
       "when": 1795042263253,
       "tag": "0000_real_rattler",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795212047432,
+      "tag": "0001_app_status",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795213060060,
+      "tag": "0002_user_referrals",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795213143018,
+      "tag": "0003_telegram_profile_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795213600941,
+      "tag": "0004_user_referral_code",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795213812093,
+      "tag": "0005_simplify_app_status",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795214505030,
+      "tag": "0006_add_app_status_mode",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795214528459,
+      "tag": "0007_drop_app_status_maintenance",
+      "breakpoints": true
     }
   ]
 }

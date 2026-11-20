@@ -1,18 +1,16 @@
-import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { checkHealth } from './api';
+import type { useAppStatus } from './useAppStatus';
 
-export function ApiStatus() {
+export function ApiStatus({
+  health,
+}: {
+  health: ReturnType<typeof useAppStatus>;
+}) {
   const { t } = useTranslation(['health', 'errors']);
-  const health = useQuery({
-    queryKey: ['api-health'],
-    queryFn: checkHealth,
-    retry: false,
-  });
   return (
     <>
       <p role="status">
-        {health.isFetching
+        {health.isPending
           ? t('health:checking')
           : health.isSuccess
             ? t('health:available')

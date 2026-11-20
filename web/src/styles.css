@@ -1,94 +1,132 @@
-:root {
-  background: var(--tg-theme-bg-color, #fff);
-  color: var(--tg-theme-text-color, #181818);
+﻿:root {
+  color-scheme: dark;
+  --app-background: #101521;
+  --app-surface: #1a2131;
+  --app-border: #354159;
+  --app-accent: #a9c2ff;
+  --adm-color-background: var(--app-surface);
+  --adm-color-text: #eef2fb;
+  --adm-color-text-secondary: #bac5d8;
+  --adm-color-border: var(--app-border);
+  --adm-color-primary: #3e66d8;
+  --app-safe-top: calc(
+    max(
+        env(safe-area-inset-top, 0px),
+        var(--tg-viewport-safe-area-inset-top, 0px)
+      ) +
+      var(--tg-viewport-content-safe-area-inset-top, 0px)
+  );
+  --app-safe-right: calc(
+    max(
+        env(safe-area-inset-right, 0px),
+        var(--tg-viewport-safe-area-inset-right, 0px)
+      ) +
+      var(--tg-viewport-content-safe-area-inset-right, 0px)
+  );
+  --app-safe-bottom: calc(
+    max(
+        env(safe-area-inset-bottom, 0px),
+        var(--tg-viewport-safe-area-inset-bottom, 0px)
+      ) +
+      var(--tg-viewport-content-safe-area-inset-bottom, 0px)
+  );
+  --app-safe-left: calc(
+    max(
+        env(safe-area-inset-left, 0px),
+        var(--tg-viewport-safe-area-inset-left, 0px)
+      ) +
+      var(--tg-viewport-content-safe-area-inset-left, 0px)
+  );
+  background: var(--app-background);
+  color: var(--adm-color-text);
+}
+
+:root.telegram-webview {
+  touch-action: pan-x pan-y;
 }
 
 body {
   margin: 0;
-  font-family: system-ui, sans-serif;
-  line-height: 1.5;
+  font:
+    1rem/1.5 system-ui,
+    sans-serif;
+}
+
+.app-shell {
+  display: flex;
+  min-block-size: 100dvh;
+  flex-direction: column;
+  background: var(--app-background);
 }
 
 main {
-  max-inline-size: 42rem;
+  flex: 1;
+  box-sizing: border-box;
+  inline-size: min(100%, 42rem);
   margin-inline: auto;
-  padding-top: max(
-    1rem,
-    calc(
-      max(
-          env(safe-area-inset-top, 0px),
-          var(--tg-viewport-safe-area-inset-top, 0px)
-        ) +
-        var(--tg-viewport-content-safe-area-inset-top, 0px)
-    )
-  );
-  padding-right: max(
-    1rem,
-    calc(
-      max(
-          env(safe-area-inset-right, 0px),
-          var(--tg-viewport-safe-area-inset-right, 0px)
-        ) +
-        var(--tg-viewport-content-safe-area-inset-right, 0px)
-    )
-  );
-  padding-bottom: max(
-    1rem,
-    calc(
-      max(
-          env(safe-area-inset-bottom, 0px),
-          var(--tg-viewport-safe-area-inset-bottom, 0px)
-        ) +
-        var(--tg-viewport-content-safe-area-inset-bottom, 0px)
-    )
-  );
-  padding-left: max(
-    1rem,
-    calc(
-      max(
-          env(safe-area-inset-left, 0px),
-          var(--tg-viewport-safe-area-inset-left, 0px)
-        ) +
-        var(--tg-viewport-content-safe-area-inset-left, 0px)
-    )
-  );
+  padding: max(1rem, var(--app-safe-top)) max(1rem, var(--app-safe-right)) 1rem
+    max(1rem, var(--app-safe-left));
   overflow-wrap: anywhere;
 }
 
 main > section {
   margin-block: 1rem;
   padding: 1rem;
-  border: 1px solid rgb(128 128 128 / 30%);
+  border: 1px solid var(--app-border);
   border-radius: 1rem;
-  background: var(--tg-theme-section-bg-color, var(--tg-theme-bg-color, #fff));
+  background: var(--app-surface);
 }
 
 h1,
-main > section h2:first-child {
+main > section h2:first-child,
+.note-dialog h2 {
   margin-block-start: 0;
 }
 
-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+.app-tabs {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  border-block-start: 1px solid var(--app-border);
+  padding: 0 max(1rem, var(--app-safe-right)) var(--app-safe-bottom)
+    max(1rem, var(--app-safe-left));
+  background: var(--app-surface);
 }
 
-nav a {
-  display: inline-flex;
-  align-items: center;
-  min-block-size: 44px;
-  padding-inline: 0.75rem;
-  border-radius: 0.5rem;
+.app-tabs .adm-tab-bar {
+  max-inline-size: 40rem;
+  margin-inline: auto;
 }
 
-nav a[aria-current='page'] {
-  background: rgb(128 128 128 / 15%);
+.app-tabs .adm-tab-bar-item {
+  padding: 0;
+  min-inline-size: 0;
+  white-space: normal;
+}
+
+.app-tabs .adm-tab-bar-item-title {
+  inline-size: 100%;
+  font-size: 0.875rem;
+}
+
+.app-tabs a {
+  display: grid;
+  min-block-size: 48px;
+  place-items: center;
+  padding-inline: 0.5rem;
+  text-align: center;
+  text-decoration: none;
+  color: var(--adm-color-text-secondary);
+}
+
+.app-tabs a[aria-current='page'] {
+  background: var(--app-background);
+  color: var(--app-accent);
   font-weight: 700;
 }
 
 a {
-  color: var(--tg-theme-link-color, #174c91);
+  color: var(--app-accent);
 }
 
 button,
@@ -109,7 +147,50 @@ form label {
   gap: 0.25rem;
 }
 
-:focus-visible {
-  outline: 2px solid currentColor;
-  outline-offset: 3px;
+.adm-popup-body.note-popup-body {
+  box-sizing: border-box;
+  max-block-size: var(--tg-viewport-height, 100dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: 1rem 1rem 0 0;
+  padding: 1.25rem max(1.25rem, var(--app-safe-right))
+    max(1.25rem, var(--app-safe-bottom)) max(1.25rem, var(--app-safe-left));
+}
+
+.note-dialog {
+  max-inline-size: 40rem;
+  margin-inline: auto;
+}
+
+.note-form {
+  display: grid;
+  align-items: normal;
+}
+
+.note-form .adm-input {
+  --font-size: 1rem;
+  box-sizing: border-box;
+  min-block-size: 44px;
+  padding: 0.5rem 0.75rem;
+  background: var(--app-background);
+  border: 1px solid #6e7d9a;
+  border-radius: 0.5rem;
+}
+
+.note-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+:focus-visible,
+.adm-button:focus-visible,
+.note-form .adm-input-element:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 2px;
+}
+
+.app-tabs a:focus-visible {
+  outline-offset: -3px;
 }

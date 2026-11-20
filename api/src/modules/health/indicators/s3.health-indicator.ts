@@ -12,7 +12,6 @@ export class S3HealthIndicator {
     private readonly healthIndicator: HealthIndicatorService,
   ) {}
 
-  /** Запрос списка из одного ключа проверяет доступ, учётные данные и бакет. */
   async check(key: string): Promise<HealthIndicatorResult> {
     const indicator = this.healthIndicator.check(key);
     try {

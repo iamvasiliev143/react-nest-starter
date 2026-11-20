@@ -14,6 +14,7 @@ import { TelegramAuthModule } from './modules/auth/telegram-auth.module.js';
 import { GreetingModule } from './modules/greeting/greeting.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { RealtimeModule } from './modules/realtime/realtime.module.js';
+import { TelegramBotModule } from './modules/telegram-bot/telegram-bot.module.js';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { RealtimeModule } from './modules/realtime/realtime.module.js';
     ClientErrorsModule,
     GreetingModule,
     TelegramAuthModule,
+    TelegramBotModule,
     RealtimeModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
