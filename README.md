@@ -56,7 +56,7 @@ API читает конфигурацию через `@nestjs/config` и про�
 
 ### Кошелёк TON — `web/.env.local`
 
-Чтобы включить подключение кошелька, задай `VITE_TONCONNECT_MANIFEST_URL` с публичным HTTPS-адресом манифеста. Это открытая переменная сборки Vite. Опубликуй манифест с полями `url`, `name` и `iconUrl` и разреши доступ к нему без авторизации. Подробности есть в [документации TON Connect](https://docs.ton.org/applications/ton-connect/get-started).
+Чтобы включить подключение кошелька, задай `VITE_TONCONNECT_MANIFEST_URL` с публичным HTTPS-адресом манифеста до запуска Vite или сборки фронтенда. Для CI передай переменную в окружение шага сборки. Vite записывает её в клиентский код при сборке. Опубликуй манифест с полями `url`, `name` и `iconUrl` и разреши доступ к нему без авторизации. Подробности есть в [документации TON Connect](https://docs.ton.org/applications/ton-connect/get-started).
 
 ### MCP — корневой `.env`
 

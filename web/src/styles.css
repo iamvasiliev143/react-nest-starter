@@ -14,27 +14,43 @@ main {
   margin-inline: auto;
   padding-top: max(
     1rem,
-    env(safe-area-inset-top, 0px),
-    var(--tg-viewport-safe-area-inset-top, 0px),
-    var(--tg-viewport-content-safe-area-inset-top, 0px)
+    calc(
+      max(
+          env(safe-area-inset-top, 0px),
+          var(--tg-viewport-safe-area-inset-top, 0px)
+        ) +
+        var(--tg-viewport-content-safe-area-inset-top, 0px)
+    )
   );
   padding-right: max(
     1rem,
-    env(safe-area-inset-right, 0px),
-    var(--tg-viewport-safe-area-inset-right, 0px),
-    var(--tg-viewport-content-safe-area-inset-right, 0px)
+    calc(
+      max(
+          env(safe-area-inset-right, 0px),
+          var(--tg-viewport-safe-area-inset-right, 0px)
+        ) +
+        var(--tg-viewport-content-safe-area-inset-right, 0px)
+    )
   );
   padding-bottom: max(
     1rem,
-    env(safe-area-inset-bottom, 0px),
-    var(--tg-viewport-safe-area-inset-bottom, 0px),
-    var(--tg-viewport-content-safe-area-inset-bottom, 0px)
+    calc(
+      max(
+          env(safe-area-inset-bottom, 0px),
+          var(--tg-viewport-safe-area-inset-bottom, 0px)
+        ) +
+        var(--tg-viewport-content-safe-area-inset-bottom, 0px)
+    )
   );
   padding-left: max(
     1rem,
-    env(safe-area-inset-left, 0px),
-    var(--tg-viewport-safe-area-inset-left, 0px),
-    var(--tg-viewport-content-safe-area-inset-left, 0px)
+    calc(
+      max(
+          env(safe-area-inset-left, 0px),
+          var(--tg-viewport-safe-area-inset-left, 0px)
+        ) +
+        var(--tg-viewport-content-safe-area-inset-left, 0px)
+    )
   );
   overflow-wrap: anywhere;
 }

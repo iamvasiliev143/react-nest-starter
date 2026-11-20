@@ -100,7 +100,21 @@ test('initializes a Telegram WebView and signs in again after a protected 401', 
     'background-color',
     'rgb(238, 244, 250)',
   );
-  await expect(page.locator('main')).toHaveCSS('padding-top', '35px');
+  await expect(page.locator('main')).toHaveCSS('padding-top', '55px');
+  await page.evaluate(() => {
+    const target = window as Window & {
+      Telegram?: {
+        WebView?: { receiveEvent: (name: string, data: unknown) => void };
+      };
+    };
+    target.Telegram?.WebView?.receiveEvent('theme_changed', {
+      theme_params: { bg_color: '#20242a', text_color: '#ffffff' },
+    });
+  });
+  await expect(page.locator('html')).toHaveCSS(
+    'background-color',
+    'rgb(32, 36, 42)',
+  );
   const signIn = page.getByRole('button', { name: 'Sign in with Telegram' });
   await signIn.click();
   await expect(page.getByRole('alert')).toHaveText(

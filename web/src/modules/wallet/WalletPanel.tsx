@@ -1,14 +1,32 @@
-import { TonConnectButton, TonConnectUIProvider } from '@tonconnect/ui-react';
+import { themeParams, useSignal } from '@tma.js/sdk-react';
+import {
+  THEME,
+  TonConnectButton,
+  TonConnectUIProvider,
+  useTonConnectUI,
+} from '@tonconnect/ui-react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export default function WalletPanel({ manifestUrl }: { manifestUrl: string }) {
-  const { i18n } = useTranslation('navigation');
   return (
-    <TonConnectUIProvider
-      manifestUrl={manifestUrl}
-      language={i18n.resolvedLanguage === 'ru' ? 'ru' : 'en'}
-    >
-      <TonConnectButton />
+    <TonConnectUIProvider manifestUrl={manifestUrl}>
+      <WalletButton />
     </TonConnectUIProvider>
   );
+}
+
+function WalletButton() {
+  const { i18n } = useTranslation('navigation');
+  const [, setOptions] = useTonConnectUI();
+  const background = useSignal(themeParams.bgColor);
+  const isDark = useSignal(themeParams.isDark);
+  const language = i18n.resolvedLanguage === 'ru' ? 'ru' : 'en';
+  const theme = background ? (isDark ? THEME.DARK : THEME.LIGHT) : 'SYSTEM';
+
+  useEffect(() => {
+    setOptions({ language, uiPreferences: { theme } });
+  }, [language, setOptions, theme]);
+
+  return <TonConnectButton />;
 }
