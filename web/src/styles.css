@@ -3,6 +3,12 @@
   color: var(--tg-theme-text-color, #181818);
 }
 
+html,
+body {
+  touch-action: pan-x pan-y;
+}
+
+
 body {
   margin: 0;
   font-family: system-ui, sans-serif;

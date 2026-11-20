@@ -1,39 +1,21 @@
 ---
 name: nestjs-practices
-description: 'Применяй при изменении или ревью границ NestJS-модулей, регистрации провайдеров, токенов или областей DI, запуска и остановки в api/src.'
+description: 'Применяй правила репозитория при изменении или ревью модулей, провайдеров, DI, запуска и остановки NestJS в api/src.'
 paths:
   - 'api/src/**'
 ---
 
-## Порядок работы
+## Структура API
 
-### Структура фичи
+- Размещай контроллеры, провайдеры и внутренние типы в `api/src/modules/<feature>/`. Соседние фичи обращаются к модулю-владельцу через явно экспортируемые провайдеры. Слои `api/src/database/` и `api/src/common/` свободны от зависимостей на фичи.
+- Храни HTTP-контракты в `dto/` с именами `*.request.dto.ts`, `*.query.dto.ts` и `*.response.dto.ts`. При необходимости группируй DTO по типу контракта в подпапках. Схема валидации лежит рядом с входным DTO, внутренние типы — в `interfaces/<name>.interface.ts`.
+- Храни тексты для пользователя в `api/src/i18n/<locale>/<feature>.json`. Получай их через `I18nService` по ключу `<feature>.<key>`.
+- В `api/src/database/<engine>/` размещай `<engine>.service.ts` и `<engine>.module.ts`. Для PostgreSQL храни схемы в `schema/<entity>.schema.ts` с реэкспортом в `schema/index.ts`, запросы — в `repositories/<entity>.repository.ts`, миграции — в `migrations/`. Используй единственное число в именах файлов и идентификаторах схем и репозиториев. Указывай SQL-имена явно в Drizzle. Фичи работают с PostgreSQL через репозитории, которые регистрирует и экспортирует `PostgresModule`.
+- Для readiness добавляй `modules/health/indicators/<engine>.health-indicator.ts` с методом `check(key)` и регистрируй индикатор в `HealthModule`.
+- Если нужен `forwardRef`, укажи, какой цикл он обслуживает и что подтверждает тест.
 
-- Размещай контроллеры, провайдеры и их внутренние типы в `api/src/modules/<feature>/`. Соседняя фича импортирует Nest-модуль и получает доступ через явно экспортируемый провайдер.
-- Размещай HTTP-контракты фичи в `dto/`, даже если контракт один. Называй файлы `*.request.dto.ts`, `*.query.dto.ts` и `*.response.dto.ts` по роли контракта. Разделяй `dto/` на подпапки, когда их состав требует навигации по типам контрактов.
-- Тексты для пользователя храни в `api/src/i18n/<locale>/<feature>.json` и запрашивай ключом `<feature>.<key>` через `I18nService`, а не строками в коде.
-- Держи схему валидации запроса рядом с входным DTO. Внутренние типы фичи (не HTTP-контракты) размещай в `interfaces/<name>.interface.ts`, а не в файлах сервисов.
-- Каждое хранилище живёт в своей папке `api/src/database/<engine>/`: сервис подключения `<engine>.service.ts` и Nest-модуль `<engine>.module.ts`. Для PostgreSQL таблицы Drizzle лежат в `schema/<entity>.schema.ts` (с реэкспортом в `schema/index.ts`), запросы — в `repositories/<entity>.repository.ts`, миграции — в `migrations/`. Имена сущностей в файлах и классах схем и репозиториев используй в единственном числе, например `user.schema.ts`, `userSchema`, `user.repository.ts` и `UserRepository`. SQL-имена задавай явно в Drizzle. Репозиторий регистрируется и экспортируется из `PostgresModule`, а сервис фичи работает с базой только через него. Фича обращается к базе через слой хранения. Таблицы используют запросы слоя хранения, а HTTP-контракты используют DTO. В `api/src/common/` выноси общую инфраструктуру, например Observe. `database/` и `common/` свободны от зависимостей на фичи.
-- Проверку зависимости для readiness оформляй индикатором `modules/health/indicators/<engine>.health-indicator.ts` с методом `check(key)` и регистрируй его в `HealthModule`.
+## Запуск и проверки
 
-### Модули и DI
-
-- Организуй providers и controllers вокруг фичи. Объявляй provider в модуле-владельце, экспортируй узкий контракт и импортируй модуль там, где он нужен. Проверь, что повторная регистрация не создаёт второй экземпляр.
-- Используй constructor injection. Для интерфейса TypeScript объяви явный токен (`Symbol` или существующий токен проекта) и связывай его с реализацией через provider. Оставляй singleton, если зависимости и данные позволяют. Request scope вводи только при необходимости состояния запроса.
-- При цикле сначала проверь, кому принадлежит общая логика. Рассмотри перенос узкой зависимости или изменение направления связи. Если нужен `forwardRef`, объясни, какой цикл он обслуживает и что подтверждает тест.
-
-### Bootstrap и проверка
-
-- Держи создание Nest в `api/src/create-app.ts`, настройку HTTP в `api/src/app-setup.ts`, а запуск сервера в `api/src/main.ts`. Используй ту же фабрику в HTTP-тестах и генерации OpenAPI. Swagger и описания тегов храни рядом в `swagger.ts` и `swagger-tags.ts`.
-
-- Сохраняй `NodeAdapter` и ESM: локальные серверные импорты с расширением `.js`, параметры Nest в третьем аргументе `NestFactory.create` с явным адаптером. Конфигурацию расширяй через существующую Zod-схему и `ConfigService`. Ресурсы закрывай в lifecycle hooks. Проверь, что bootstrap включает shutdown hooks, если ресурс зависит от сигналов остановки.
-- Используй существующие Nest Authentication и Authorization для политик доступа. Изменения публичных маршрутов проверяй через `api-contract`, авторизацию Telegram — через `telegram-auth-change`. Для HTTP используй `node:test` и `fetch` к локальному экземпляру API.
-- Для неизвестной межмодульной зависимости используй `engram-context`, затем проверь исходники.
-
-## Результат
-
-Укажи границу модуля, регистрацию провайдера и фактический результат проверок.
-
-## Источники
-
-Источник практик — [Kadajett, NestJS Best Practices](https://github.com/Kadajett/agent-nestjs-skills/tree/3986e0cede33958e000f959031cbee0cd83c2941/skills/nestjs-best-practices).
+- Создавай Nest-приложение в `api/src/create-app.ts`, настраивай HTTP в `api/src/app-setup.ts`, запускай сервер в `api/src/main.ts`. Используй ту же фабрику для HTTP-тестов и генерации OpenAPI. Храни настройку Swagger и описания тегов в `swagger.ts` и `swagger-tags.ts`.
+- Сохраняй `NodeAdapter` и ESM. Используй расширение `.js` в локальных серверных импортах. Передавай параметры Nest третьим аргументом `NestFactory.create` при явном адаптере. Расширяй конфигурацию через существующую Zod-схему и `ConfigService`.
+- Используй действующие Nest Authentication и Authorization для политик доступа, а для HTTP-тестов — `node:test` и `fetch` к локальному API. При изменении HTTP-контракта применяй `api-contract`, при изменении входа Telegram или прав — `telegram-auth-change`. Для неизвестной межмодульной зависимости используй `engram-context` и сверяй выводы с исходниками.
