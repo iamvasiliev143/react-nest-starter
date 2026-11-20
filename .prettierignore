@@ -12,3 +12,11 @@ test-results/
 api/src/database/postgres/migrations/meta/
 api/openapi.json
 web/src/api-schema.d.ts
+
+# Официальные навыки из @nestjs/skills
+/.agents/skills/nestjs/
+/.agents/skills/nestjs-auth/
+/.agents/skills/nestjs-data/
+/.agents/skills/nestjs-feature/
+/.agents/skills/nestjs-production/
+/.agents/skills/nestjs-testing/
